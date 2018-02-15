@@ -1,0 +1,8 @@
+bitshares>=0.1.10
+pymongo
+pyyaml
+flask
+flask_script
+strict_rfc3339
+jsonschema
+azure

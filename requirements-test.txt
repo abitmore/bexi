@@ -1,0 +1,6 @@
+tox
+pymongo
+pyyaml
+mongomock
+Flask-Testing
+coverage

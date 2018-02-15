@@ -1,0 +1,80 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "Bexi - Operation Schema",
+	"type": "object",
+	"required": [
+		"status",
+		"fee_value",
+		"fee_asset_id",
+		"from",
+		"to",
+		"amount_value",
+		"amount_asset_id",
+		"memo",
+		"expiration",
+		"customer_id",
+		"chain_identifier"
+	],
+	"properties": {
+		"status": {
+			"type": "string",
+			"enum": [
+				"in_progress",
+				"completed",
+				"failed"
+			]
+		},
+		"block_num": {
+			"type": [
+				"null",
+				"number"
+			]
+		},
+		"fee_value": {
+			"type": "number"
+		},
+		"fee_asset_id": {
+			"type": "string"
+		},
+		"from": {
+			"type": "string"
+		},
+		"to": {
+			"type": "string"
+		},
+		"amount_value": {
+			"type": "number"
+		},
+		"amount_asset_id": {
+			"type": "string"
+		},
+		"memo": {
+			"type": "string"
+		},
+		"expiration": {
+			"type": "number"
+		},
+		"customer_id": {
+			"type": "string"
+		},
+		"incident_id": {
+			"type": [
+				"null",
+				"string"
+			]
+		},
+		"chain_identifier": {
+			"type": "string"
+		},
+		"timestamp": {
+			"type": "string",
+			"format": "date-time"
+		},
+		"message": {
+			"type": [
+				"null",
+				"string"
+			]
+		}
+	}
+}
