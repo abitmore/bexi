@@ -1,16 +1,14 @@
-import unittest
-
 from bexi.blockchain_monitor import BlockchainMonitor
 from bexi.connection import requires_blockchain
 from bexi import Config
+from tests.abstract_tests import ATestnetTest
 
 
-class TestBlockchainMonitor(unittest.TestCase):
+class TestBlockchainMonitor(ATestnetTest):
 
     def setUp(self):
-        Config.load()
+        super(TestBlockchainMonitor, self).setUp()
         Config.data["operation_storage"]["use"] = "mongodbtest"
-        Config.data["network_type"] = "Test"
 
     def tearDown(self):
         Config.reset()

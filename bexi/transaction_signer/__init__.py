@@ -64,8 +64,18 @@ def sign_transaction(transaction, wifs):
     # Instantiate Signed_Transaction with content
     assert isinstance(transaction, dict)
     assert isinstance(wifs, (list, tuple, set))
+
+    prefix = "BTS"
+    if transaction["operations"][0][1].get("prefix", "BTS") != "BTS":
+        # call transaction signer
+        prefix = transaction["operations"][0][1]["prefix"]
+    if transaction.get("prefix", "BTS") != "BTS":
+        prefix = transaction["prefix"]
+        for idx, item in enumerate(transaction["operations"]):
+            transaction["operations"][idx][1].update({"prefix": transaction["prefix"]})
+
     tx = Signed_Transaction(**transaction)
     # call transaction signer
-    result = tx.sign(wifs).json()
+    result = tx.sign(wifs, chain=prefix).json()
     result["transaction_id"] = tx.id
     return result

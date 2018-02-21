@@ -103,6 +103,11 @@ class BlockchainMonitor(object):
         self.start_block = kwargs.pop("start_block", None)
         self.stop_block = kwargs.pop("stop_block", None)
 
+        if not self.start_block:
+            last_block = self.storage.get_last_head_block_num()
+            if last_block > 0:
+                self.start_block = last_block
+
     def unlock_wallet(self, pwd):
         """ Unlock the pybitshares wallet with the provided password
         """
@@ -113,18 +118,12 @@ class BlockchainMonitor(object):
         """ Listen to the blockchain and send blocks to
             :func:`BlockchainMonitor.process_block`
 
-            :raises WalletLocked: in the case the wallet is locked or no keys
-                have been manually provided.
-
             .. note:: Depending on the setting of ``watch_mode`` in the
                 configuration, the listen method has slightly different
                 behavior. Namely, we here have the choice between "head" (the
                 last block) and "irreversible" (the block that is confirmed by
                 2/3 of all block producers and is thus irreversible)
         """
-        if self.bitshares.wallet.locked():
-            raise WalletLocked
-
         for block in Blockchain(
             mode=self.watch_mode,
             bitshares_instance=self.bitshares

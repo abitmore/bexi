@@ -17,12 +17,23 @@ class ATestnetTest(unittest.TestCase):
             connection.reset()
 
         Config.load()
+        Config.load("../tests/config_test.yaml")
         Config.data["operation_storage"]["use"] = "azuretest"
         Config.data["network_type"] = "Test"
         Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = True
 
     def tearDown(self):
         Config.reset()
+
+    def get_customer_active_key(self):
+        """ reads the test account configuration from config_test.yaml
+        """
+        return Config.get_config()["bitshares"]["customer_account_active_key"]
+
+    def get_customer_id(self):
+        """ reads the test account configuration from config_test.yaml
+        """
+        return Config.get_config()["bitshares"]["customer_account_id"]
 
 
 class AFlaskTest(TestCase):
@@ -32,6 +43,7 @@ class AFlaskTest(TestCase):
             connection.reset()
 
         Config.load()
+        Config.load("../tests/config_test.yaml")
         Config.data["operation_storage"]["use"] = "azuretest"
         Config.data["network_type"] = "Test"
         Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = True
@@ -47,12 +59,23 @@ class AFlaskTest(TestCase):
             connection.reset()
 
         Config.load()
+        Config.load("../tests/config_test.yaml")
         Config.data["operation_storage"]["use"] = "azuretest"
         Config.data["network_type"] = "Test"
         Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = True
 
     def tearDown(self):
         Config.reset()
+
+    def get_customer_active_key(self):
+        """ reads the test account configuration from config_test.yaml
+        """
+        return Config.get_config()["bitshares"]["customer_account_active_key"]
+
+    def get_customer_id(self):
+        """ reads the test account configuration from config_test.yaml
+        """
+        return Config.get_config()["bitshares"]["customer_account_id"]
 
 
 class ATestOperationStorage(ATestnetTest):

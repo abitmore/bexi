@@ -14,29 +14,25 @@ app = None
 config = None
 
 
-def check_keys():
-    if not Config.get_config()["bitshares"]["exchange_account_name"]:
-        raise Exception("Please set the exchange account name in config.yaml")
-    if not Config.get_config()["bitshares"]["exchange_account_id"]:
-        raise Exception("Please set the exchange account id in config.yaml")
-    if not Config.get_config()["bitshares"]["exchange_account_active_key"]:
-        raise Exception("Please set the active key of the exchange account in config.yaml.")
-
-
 @click.group()
 def main():
+    Config.load("config_common.yaml")
     global app
     global config
-    app = create_basic_flask_app()
     config = Config.get_config()["wsgi"]
+    app = create_basic_flask_app()
     set_global_logger()
-    check_keys()
 
 
 @main.command()
 @click.option("--host")
 @click.option("--port")
 def wsgi(host, port):
+    Config.load("config_bitshares_connection.yaml")
+    Config.load("config_bitshares_keys.yaml")
+    Config.load("config_bitshares.yaml")
+    Config.load("config_operation_storage.yaml")
+
     host = host or config["host"]
     port = port or config["port"]
     app.logger.info("Starting " + config["name"] + " with all wsgi services ...")
@@ -50,6 +46,9 @@ def wsgi(host, port):
 @click.option("--host")
 @click.option("--port")
 def sign_service(host, port):
+    Config.load("config_bitshares_keys.yaml")
+    Config.load("config_bitshares.yaml")
+
     host = host or config["host"]
     port = port or config["port"]
     app.logger.info("Starting " + config["name"] + " sign service ...")
@@ -62,6 +61,10 @@ def sign_service(host, port):
 @click.option("--host")
 @click.option("--port")
 def manage_service(host, port):
+    Config.load("config_bitshares_connection.yaml")
+    Config.load("config_bitshares.yaml")
+    Config.load("config_operation_storage.yaml")
+
     host = host or config["host"]
     port = port or config["port"]
     app.logger.info("Starting " + config["name"] + " manage service ...")
@@ -72,6 +75,10 @@ def manage_service(host, port):
 
 @main.command()
 def blockchain_monitor():
+    Config.load("config_bitshares_connection.yaml")
+    Config.load("config_bitshares.yaml")
+    Config.load("config_operation_storage.yaml")
+
     app.logger.info("Starting BitShares blockchain monitor ...")
     start_block_monitor()
 

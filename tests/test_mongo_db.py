@@ -14,6 +14,9 @@ from bexi.operation_storage.mongodb_storage import MongoDBOperationsStorage
 
 class TestMongoDB(unittest.TestCase):
 
+    def setUp(self):
+        Config.load()
+
     def _get_db_config(self):
         config = Config.get_config()["operation_storage"]
         return config["mongodbtest"]

@@ -1,0 +1,7 @@
+log_folder: dump/logs
+
+wsgi:
+ name: bexi
+ version: 0.0.2
+ host: localhost
+ port: 5000

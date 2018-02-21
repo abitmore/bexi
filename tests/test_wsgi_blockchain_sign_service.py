@@ -1,10 +1,10 @@
-from bexi import Config
 from bexi.wsgi.sign_service import implementations
 
-from unittest.case import TestCase
+from tests.abstract_tests import ATestnetTest
+from bexi import Config
 
 
-class TestSignService(TestCase):
+class TestSignService(ATestnetTest):
 
     def test_wallets(self):
         address = implementations.create_address()
@@ -40,8 +40,8 @@ class TestSignService(TestCase):
         self.assertEqual(len(stx["signatures"]), 1)
 
         stx = implementations.sign(
-            tx, ["5JLEjm8zesAHq9fZ52dVTj2Mho15w7esfqWyTULp6WBe9YEJiRA",
-                 "5Jm7csbkpF8ghpG9QoyAeWw9Z2uBe93Axe9eoV9BuopUx4r4o6n"]
+            tx, [Config.get_config()["bitshares"]["exchange_account_active_key"],
+                 self.get_customer_active_key()]
         )
         stx = stx["signedTransaction"]
         self.assertIn("signatures", stx)

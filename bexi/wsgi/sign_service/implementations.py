@@ -5,10 +5,8 @@
 from ... import Config
 from ...transaction_signer import sign_transaction
 from ...addresses import create_unique_address
-from ...connection import requires_blockchain
 
 
-@requires_blockchain
 def sign(tx, keys):
     """ This method is used to connect the transaction signer with the API.
     """

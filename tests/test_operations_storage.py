@@ -13,6 +13,7 @@ from jsonschema.exceptions import ValidationError
 class TestMongoOperationStorage(ATestOperationStorage):
 
     def setUp(self):
+        super(TestMongoOperationStorage, self).setUp()
         self.storage = get_operation_storage("mongodbtest")
 
     def test_insert_and_complete(self):
@@ -213,5 +214,6 @@ class TestMongoOperationStorage(ATestOperationStorage):
 class TestAzureOperationStorageFactory(TestMongoOperationStorage):
 
     def setUp(self):
+        super(TestAzureOperationStorageFactory, self).setUp()
         self.storage = get_operation_storage("azuretest")
 

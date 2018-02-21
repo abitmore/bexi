@@ -5,6 +5,7 @@ from logging.handlers import TimedRotatingFileHandler
 from copy import deepcopy
 import io
 import urllib
+import collections
 
 
 class Config(dict):
@@ -15,7 +16,7 @@ class Config(dict):
     data = None
 
     @staticmethod
-    def load():
+    def load(config_name=None):
         """ Load config from a file
 
             :param str file_name: (defaults to 'config.yaml') File name and
@@ -23,29 +24,35 @@ class Config(dict):
         """
         file_or_url = os.environ.get("SettingsUrl", None)
 
-        default = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "config.yaml"
-        )
+        if not Config.data:
+            Config.data = {}
+
         if not file_or_url:
-            file_or_url = default
-
-        try:
-            if os.path.isfile(file_or_url):
-                stream = io.open(file_or_url, 'r', encoding='utf-8')
+            loading_list = []
+            if not config_name:
+                loading_list.append("config_bitshares_connection.yaml")
+                loading_list.append("config_bitshares_keys.yaml")
+                loading_list.append("config_bitshares.yaml")
+                loading_list.append("config_operation_storage.yaml")
+                loading_list.append("config_common.yaml")
             else:
-                stream = urllib.request.urlopen(urllib.parse.urlparse(file_or_url).geturl())
-        except Exception as e:
-            print("Something bad happened while loading config, returning to defaults ...")
-            print(e)
-            stream = io.open(default, 'r', encoding='utf-8')
+                loading_list = [config_name]
 
-        with stream:
-            Config.data = yaml.load(stream)
-        return Config.data
+            for config_file in loading_list:
+                file_path = os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)),
+                    config_file
+                )
+                stream = io.open(file_path, 'r', encoding='utf-8')
+                with stream:
+                    update(Config.data, yaml.load(stream))
+        else:
+            stream = urllib.request.urlopen(urllib.parse.urlparse(file_or_url).geturl())
+            with stream:
+                update(Config.data, yaml.load(stream))
 
     @staticmethod
-    def get_config():
+    def get_config(config_name=None):
         """ Static method that returns the configuration as dictionary.
             Usage:
 
@@ -53,9 +60,18 @@ class Config(dict):
 
                 Config.get_config()
         """
-        if not Config.data:
-            Config.load()
-        return Config(deepcopy(Config.data))
+        if not config_name:
+            if not Config.data:
+                raise Exception("Either preload the configuration or specify config_name!")
+        else:
+            if not Config.data:
+                Config.data = {}
+            Config.load(config_name)
+        return deepcopy(Config.data)
+
+    @staticmethod
+    def get_bitshares_config():
+        return deepcopy(Config.get_config()["bitshares"])
 
     @staticmethod
     def reset():
@@ -63,9 +79,14 @@ class Config(dict):
         """
         Config.data = None
 
-    @staticmethod
-    def get_bitshares_config():
-        return Config.get_config()["bitshares"]
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 
 
 def set_global_logger():

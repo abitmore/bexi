@@ -1,10 +1,13 @@
 import unittest
 
-from bexi import utils
+from bexi import utils, Config
 from bexi.addresses import create_unique_address, split_unique_address
 
 
 class TestAddresses(unittest.TestCase):
+
+    def setUp(self):
+        Config.load()
 
     def test_create_unique_address(self):
         unique_wallet = create_unique_address(

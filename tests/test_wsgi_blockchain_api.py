@@ -96,7 +96,7 @@ class TestBlockchainApi(ATestOperationStorage):
         tx = implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
-            "lykke-customer" + DELIMITER + "to_customer_id",
+            self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             10000,
             False
@@ -136,7 +136,7 @@ class TestBlockchainApi(ATestOperationStorage):
         tx = implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
-            "lykke-customer" + DELIMITER + "to_customer_id",
+            self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             10000,
             False
@@ -176,7 +176,7 @@ class TestBlockchainApi(ATestOperationStorage):
         tx = implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
-            "lykke-customer" + DELIMITER + "to_customer_id",
+            self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             10000,
             True       # This changes behavior!!!!!!!!!!!!!!!
@@ -196,12 +196,12 @@ class TestBlockchainApi(ATestOperationStorage):
         tx = manage_service.implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
-            "lykke-customer" + DELIMITER + "to_customer_id",
+            self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
-            10000,
+            100000,
             False
         )
-        tx["transactionContext"]["operations"][0][1].update({"prefix": "TEST"})
+        tx["transactionContext"]["prefix"] = "TEST"
         stx = sign_service.implementations.sign(
             tx["transactionContext"],
             [utils.get_exchange_active_key()]
