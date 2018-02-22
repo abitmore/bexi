@@ -6,6 +6,7 @@ from copy import deepcopy
 import io
 import urllib
 import collections
+import json
 
 
 class Config(dict):
@@ -49,7 +50,8 @@ class Config(dict):
         else:
             stream = urllib.request.urlopen(urllib.parse.urlparse(file_or_url).geturl())
             with stream:
-                update(Config.data, yaml.load(stream))
+                update(Config.data, json.loads(stream.read()))
+
 
     @staticmethod
     def get_config(config_name=None):
@@ -78,6 +80,13 @@ class Config(dict):
         """ Static method to reset the configuration storage
         """
         Config.data = None
+
+    @staticmethod
+    def dump_current(file_name="config.json"):
+        import json
+        output = os.path.join(Config.get_config()["log_folder"], file_name)
+        with open(output, 'w') as outfile:
+            json.dump(Config.data, outfile)
 
 
 def update(d, u):
