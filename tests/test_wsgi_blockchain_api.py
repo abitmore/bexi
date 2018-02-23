@@ -201,7 +201,7 @@ class TestBlockchainApi(ATestOperationStorage):
             100000,
             False
         )
-        tx["transactionContext"]["prefix"] = "TEST"
+
         stx = sign_service.implementations.sign(
             tx["transactionContext"],
             [utils.get_exchange_active_key()]

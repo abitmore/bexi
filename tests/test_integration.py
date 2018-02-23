@@ -65,7 +65,7 @@ class TestIntegration(AFlaskTest):
             "transactionContext": transaction.json["transactionContext"],
             "privateKeys": [self.get_customer_active_key()]
         }
-        sign_transaction["transactionContext"]["prefix"] = "TEST"
+
         signed_transaction = self.client.post(url_for('Blockchain.SignService.sign'),
                                               data=json.dumps(sign_transaction))
 

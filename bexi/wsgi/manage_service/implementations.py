@@ -286,6 +286,9 @@ def build_transaction(incidentId, fromAddress, toAddress, asset_id,
         "decoded_memo": memo_plain,
     })
 
+    if bitshares_instance.prefix != "BTS":
+        tx["prefix"] = bitshares_instance.prefix
+
     return {"transactionContext": tx}
 
 

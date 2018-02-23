@@ -1,4 +1,4 @@
-log_folder: dump/logs
+dump_folder: dump
 
 wsgi:
  name: bexi
