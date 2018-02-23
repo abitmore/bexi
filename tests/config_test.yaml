@@ -1,0 +1,12 @@
+bitshares:
+    customer_account_id: 1.2.20138
+    customer_account_active_key: 5HuuC1pbw5fsJFbTvR9VXbnv1qp9KSb3LpwUrhRLsUVgukGFu1G
+    
+    connection:
+        Test:
+         keys:  # needs both exchange and customer account active key since config is overwritten
+            - 5KD3ZFrxVFJReHHcss8b2KkoccBJCTQCZy6HLfZ3TY5dkoAD27N  # exchange account active key
+            - 5HuuC1pbw5fsJFbTvR9VXbnv1qp9KSb3LpwUrhRLsUVgukGFu1G  # customer account active key
+            
+            
+huh: 5KjRsxwNsoJ8PjCjM4p8Jja3krUQ8uFjw7rRf3v7DH8kRZNhNW1
