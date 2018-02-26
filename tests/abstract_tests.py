@@ -77,6 +77,11 @@ class AFlaskTest(TestCase):
         """
         return Config.get_config()["bitshares"]["customer_account_id"]
 
+    def get_customer_memo_key(self):
+        """ reads the test account configuration from config_test.yaml
+        """
+        return Config.get_config()["bitshares"]["customer_account_memo_key"]
+
 
 class ATestOperationStorage(ATestnetTest):
 

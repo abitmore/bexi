@@ -179,6 +179,10 @@ class AzureOperationsStorage(BasicOperationStorage):
             for variant in self._operation_varients:
                 to_insert = operation.copy()
                 to_insert.update(self._operation_prep[variant](to_insert))
+                if not to_insert["PartitionKey"]:
+                    raise AzureMissingResourceHttpError()
+                if not to_insert["RowKey"]:
+                    raise AzureMissingResourceHttpError()
                 self._service.insert_entity(
                     self._operation_tables[variant],
                     to_insert

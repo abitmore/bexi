@@ -77,6 +77,7 @@ def manage_service(host, port):
 
 def load_manage_service_config():
     Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
 
@@ -91,6 +92,7 @@ def blockchain_monitor():
 
 def load_blockchain_monitor_config():
     Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
 

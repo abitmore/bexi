@@ -1,7 +1,0 @@
-bitshares:
-    exchange_account_active_key: # insert exchange account active key
-
-    connection:
-        Test:
-         keys:
-            - # insert exchange account active key

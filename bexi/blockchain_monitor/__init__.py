@@ -10,6 +10,7 @@ from bitshares.instance import shared_bitshares_instance
 from bitshares.memo import Memo
 from bitsharesbase.operationids import getOperationNameForId
 from bitsharesbase.signedtransactions import Signed_Transaction
+import logging
 
 
 class BlockchainMonitor(object):
@@ -131,6 +132,8 @@ class BlockchainMonitor(object):
             start=self.start_block,
             stop=self.stop_block
         ):
+            logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
+
             self.process_block(block)
             self.storage.set_last_head_block_num(block["block_num"])
 
@@ -250,6 +253,7 @@ class BlockchainMonitor(object):
             will send it to postprocess_operation().
 
         """
+
         if not self.operation_matches(operation):
             return
 
@@ -278,6 +282,8 @@ class BlockchainMonitor(object):
             )["name"],
             "decoded_memo": self.decode_memo(payload),
         })
+
+        logging.getLogger(__name__).debug("Recognized accounts, inserting transfer " + str(operation["transaction_id"]))
 
         try:
             self.storage.insert_operation(operation)

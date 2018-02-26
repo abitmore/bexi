@@ -93,9 +93,11 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_build_transaction_not_enough_balance(self):
         from_id = utils.get_exchange_account_id()
+        from_memo_key = utils.get_exchange_memo_key()
         tx = implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
+            from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             10000,
@@ -133,9 +135,11 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_build_transaction(self):
         from_id = utils.get_exchange_account_id()
+        from_memo_key = utils.get_exchange_memo_key()
         tx = implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
+            from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             10000,
@@ -173,9 +177,11 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_build_transaction2(self):
         from_id = utils.get_exchange_account_id()
+        from_memo_key = utils.get_exchange_memo_key()
         tx = implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
+            from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             10000,
@@ -193,9 +199,11 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_broadcast_transaction(self):
         from_id = utils.get_exchange_account_id()
+        from_memo_key = utils.get_exchange_memo_key()
         tx = manage_service.implementations.build_transaction(
             "Foobar",
             from_id + DELIMITER + "from_customer_id",
+            from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
             "1.3.0",
             100000,

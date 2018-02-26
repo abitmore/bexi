@@ -1,5 +1,8 @@
 dump_folder: dump
 
+logs:
+    level: DEBUG
+
 wsgi:
  name: bexi
  version: 0.0.2

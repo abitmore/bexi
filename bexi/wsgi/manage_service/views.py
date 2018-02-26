@@ -157,6 +157,7 @@ def build_transaction():
             implementations.build_transaction(
                 _body("operationId"),
                 _body("fromAddress"),
+                _body("fromAddressContext"),
                 _body("toAddress"),
                 _body("assetId"),
                 _body("amount"),
@@ -182,8 +183,11 @@ def broadcast_transaction():
 
     """
     try:
+        valid = implementations.broadcast_transaction(_body("signedTransaction"))
+        if not valid:
+            abort(400)
         return jsonify(
-            implementations.broadcast_transaction(_body("signedTransaction"))
+            valid
         )
     except NotEnoughBalanceException:
         # controlled abort, no logging

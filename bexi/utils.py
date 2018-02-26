@@ -57,3 +57,9 @@ def get_exchange_active_key():
     """ gets the exchange accounts active private key that is configured in config.yaml
     """
     return Config.get_config()["bitshares"]["exchange_account_active_key"]
+
+
+def get_exchange_memo_key():
+    """ gets the exchange accounts active private key that is configured in config.yaml
+    """
+    return Config.get_config()["bitshares"]["exchange_account_memo_key"]

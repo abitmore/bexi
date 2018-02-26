@@ -196,7 +196,7 @@ def get_address_history_to(address, take, after_hash):
 
 
 @requires_blockchain
-def build_transaction(incidentId, fromAddress, toAddress, asset_id,
+def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
                       amount, includeFee, bitshares_instance=None):
     """ Builds a transaction (without signature)
 
@@ -267,6 +267,8 @@ def build_transaction(incidentId, fromAddress, toAddress, asset_id,
     )
 
     # encrypt memo
+    # TODO this is a hack. python-bitshares issue is opened, once resolve, fix
+    bitshares_instance.wallet.setKeys(fromMemoWif)
     memo = Memo(
         from_account=from_account,
         to_account=to_account,
@@ -333,7 +335,9 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
     else:
         # This happens in case of virtual consolidation transactions/transfers
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
-            storage.flag_operation_completed(map_operation(tx, op_in_tx, operation))
+            op = map_operation(tx, op_in_tx, operation)
+            op["block_num"] = -1
+            storage.flag_operation_completed(op)
         return True
 
 

@@ -14,7 +14,10 @@ class Config(dict):
         configuration file.
     """
 
+    ERRORS = {}
+
     data = None
+    source = None
 
     @staticmethod
     def load(config_files=[]):
@@ -23,7 +26,8 @@ class Config(dict):
             :param str file_name: (defaults to 'config.yaml') File name and
                 path to load config from
         """
-        # single json configuration file to load instead of yaml files
+
+        # optional single json configuration file to load instead of yaml files
         file_or_url = os.environ.get("SettingsUrl", None)
 
         if not Config.data:
@@ -31,8 +35,10 @@ class Config(dict):
 
         if not file_or_url:
             if not config_files:
+                # load all config files as default
                 config_files.append("config_bitshares_connection.yaml")
-                config_files.append("config_bitshares_keys.yaml")
+                config_files.append("config_bitshares_active_keys.yaml")
+                config_files.append("config_bitshares_memo_keys.yaml")
                 config_files.append("config_bitshares.yaml")
                 config_files.append("config_operation_storage.yaml")
                 config_files.append("config_common.yaml")
@@ -47,15 +53,19 @@ class Config(dict):
                 stream = io.open(file_path, 'r', encoding='utf-8')
                 with stream:
                     update(Config.data, yaml.load(stream))
+
+            Config.source = ";".join(config_files)
         else:
             stream = urllib.request.urlopen(urllib.parse.urlparse(file_or_url).geturl())
             with stream:
                 update(Config.data, json.loads(stream.read()))
+            Config.source = file_or_url
 
         # check if a private key was given, and overwrite existing ones then
         private_key = os.environ.get("PrivateKey", None)
         if private_key and private_key != "":
             try:
+                # direct access to config dict for overwriting
                 Config.data["bitshares"]["exchange_account_active_key"] = private_key
             except KeyError:
                 pass
@@ -63,9 +73,12 @@ class Config(dict):
                 all_connections = Config.data["bitshares"]["connection"]
                 for key, value in all_connections.items():
                     try:
-                        Config.data["bitshares"]["connection"][key]["keys"] = [private_key]
+                        # direct access to config dict for overwriting
+                        keys = Config.data["bitshares"]["connection"][key]["keys"]
                     except KeyError:
-                        pass
+                        keys = {}
+                    keys.append(private_key)
+                    Config.data["bitshares"]["connection"][key]["keys"] = keys
             except KeyError:
                 pass
 
@@ -88,6 +101,44 @@ class Config(dict):
         return deepcopy(Config.data)
 
     @staticmethod
+    def get(*args, message=None, default=None):
+        """
+        This config getter method allows sophisticated and encapsulated access to the config file, while
+        being able to define defaults in-code where necessary.
+
+        :param args: key to retrieve from config, nested in order
+        :type tuple of strings
+        :param message: message to be displayed when not found, defaults to entry in ERRORS dict with the
+                                key defined by the desired config keys in args (key1.key2.key2). For example
+                                Config.get("foo", "bar") will attempt to retrieve config["foo"]["bar"], and if
+                                not found raise an exception with ERRORS["foo.bar"] message
+        :type message: string
+        :param default: default value if not found in config
+        :type default: object
+        """
+        try:
+            nested = Config.get_config()
+            for key in args:
+                nested = nested[key]
+            if not nested:
+                raise KeyError()
+        except KeyError:
+            lookup_key = '.'.join(str(i) for i in args)
+            if not message:
+                if Config.ERRORS.get(lookup_key):
+                    message = Config.ERRORS[lookup_key]
+                else:
+                    message = "Configuration key {0} not found in {1}!"
+                message = message.format(lookup_key, Config.source)
+            if default:
+                logging.getLogger(__name__).debug(message + " Using given default value.")
+                return default
+            else:
+                raise KeyError(message)
+
+        return nested
+
+    @staticmethod
     def get_bitshares_config():
         return deepcopy(Config.get_config()["bitshares"])
 
@@ -96,6 +147,7 @@ class Config(dict):
         """ Static method to reset the configuration storage
         """
         Config.data = None
+        Config.source = None
 
     @staticmethod
     def dump_current(file_name="config.json"):
@@ -116,7 +168,9 @@ def update(d, u):
 def set_global_logger():
     # setup logging
     # ... log to file system
-    log_folder = os.path.join(Config.get_config()["dump_folder"], "logs")
+    log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
+    log_level = logging.getLevelName(Config.get("logs", "level", default="INFO"))
+
     os.makedirs(log_folder, exist_ok=True)
     log_format = ('%(asctime)s %(levelname) -10s: %(message)s')
     trfh = TimedRotatingFileHandler(
@@ -125,16 +179,16 @@ def set_global_logger():
         1
     )
     trfh.suffix = "%Y-%m-%d"
-    trfh.setLevel(logging.DEBUG)
     trfh.setFormatter(logging.Formatter(log_format))
+    trfh.setLevel(log_level)
 
     # ... and to console
     sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
     sh.setFormatter(logging.Formatter(log_format))
+    sh.setLevel(log_level)
 
     # global config (e.g. for werkzeug)
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=log_level,
                         format=log_format,
                         handlers=[trfh, sh])
 

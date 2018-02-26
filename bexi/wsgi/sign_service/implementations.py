@@ -27,5 +27,6 @@ def create_address():
     """
     return {
         "privateKey": Config.get_config()["bitshares"]["exchange_account_active_key"],
-        "publicAddress": create_unique_address(Config.get_config()["bitshares"]["exchange_account_id"])
+        "publicAddress": create_unique_address(Config.get_config()["bitshares"]["exchange_account_id"]),
+        "addressContext": Config.get_config()["bitshares"]["exchange_account_memo_key"],
     }
