@@ -20,7 +20,7 @@ This library was implemented according to
 	
 	https://streams.lykke.com/Project/ProjectDetails/bitshares-blockchain-integration-api
 	https://docs.google.com/document/d/1KVd-2tg-Ze5-b3kFYh1GUdGn9jvoo7HFO3wH_knpd3U/edit
-	(see also the included pdf in specifications/lykke)
+
 
 Who do I talk to?
 -----------------
@@ -59,9 +59,16 @@ Build documentation:
 
 Quick Guide
 ----------
-Fill in the mongodb and azure connection details, 
+Fill in the operation storage details, 
 as well as the BitShares exchange account and connection
-details in the config.yaml. Then initiate the blockchain monitor 
+details in the config yaml files.
+The manage_service and blockchain_monitor require the memo key of the 
+exchange account, whereas the sign_service requires only the active key.
+The active key is what you normally see as the private key, since it allows
+to move funds, whereas the memo key only allows reading the memo message of
+transfers. 
+
+Then initiate the blockchain monitor
 
 .. code-block:: bash
 
