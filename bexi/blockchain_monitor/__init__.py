@@ -234,7 +234,7 @@ class BlockchainMonitor(object):
         except MissingKeyError:
             decoded_memo = "!MEMO KEY MISSING!"
         except KeyError:
-            decoded_memo = "!NO MEMO PROVIDED!"
+            decoded_memo = ""
         except ValueError:
             decoded_memo = "!COULDN'T DECODE MEMO!"
         return decoded_memo

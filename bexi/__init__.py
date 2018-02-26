@@ -69,18 +69,18 @@ class Config(dict):
                 Config.data["bitshares"]["exchange_account_active_key"] = private_key
             except KeyError:
                 pass
-            try:
-                all_connections = Config.data["bitshares"]["connection"]
-                for key, value in all_connections.items():
-                    try:
-                        # direct access to config dict for overwriting
-                        keys = Config.data["bitshares"]["connection"][key]["keys"]
-                    except KeyError:
-                        keys = {}
-                    keys.append(private_key)
-                    Config.data["bitshares"]["connection"][key]["keys"] = keys
-            except KeyError:
-                pass
+#             try:
+#                 all_connections = Config.data["bitshares"]["connection"]
+#                 for key, value in all_connections.items():
+#                     try:
+#                         # direct access to config dict for overwriting
+#                         keys = Config.data["bitshares"]["connection"][key]["keys"]
+#                     except KeyError:
+#                         keys = {}
+#                     keys.append(private_key)
+#                     Config.data["bitshares"]["connection"][key]["keys"] = keys
+#             except KeyError:
+#                 pass
 
     @staticmethod
     def get_config(config_name=None):

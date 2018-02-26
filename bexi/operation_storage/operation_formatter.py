@@ -16,9 +16,11 @@ def decode_operation(operation):
         :param operation: operation as given by blockchain monitor
         :type operation: dict
     """
+    memo = operation["op"][1].get("memo", "unknown")
+
     new_operation = {
         "block_num": operation.get("block_num"),
-        "memo": json.dumps(operation["op"][1]["memo"]),
+        "memo": json.dumps(memo),
         "from": operation["op"][1]["from"],
         "to": operation["op"][1]["to"],
         "amount_value": operation["op"][1]["amount"]["amount"],
@@ -28,8 +30,13 @@ def decode_operation(operation):
         "fee_value": operation["op"][1]["fee"]["amount"],
         "fee_asset_id": operation["op"][1]["fee"]["asset_id"]
     }
-    #
-    memo = addresses.split_memo(operation["decoded_memo"])
+
+    try:
+        memo = addresses.split_memo(operation["decoded_memo"])
+    except KeyError:
+        memo = addresses.split_memo("unknown")
+    except ValueError:
+        memo = addresses.split_memo("unknown")
 
     if operation.get("message"):
         new_operation["message"] = operation["message"]

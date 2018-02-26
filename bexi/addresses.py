@@ -103,6 +103,9 @@ def split_memo(memo):
                      incident_id is optional
         :type memo: str
     """
+    if not memo or memo == "":
+        raise ValueError()
+
     splitted = memo.split(DELIMITER)
     always = {"customer_id": splitted[0]}
     if len(splitted) == 2:

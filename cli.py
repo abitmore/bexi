@@ -29,7 +29,8 @@ def main():
 @click.option("--port")
 def wsgi(host, port):
     Config.load(["config_bitshares_connection.yaml",
-                 "config_bitshares_keys.yaml",
+                 "config_bitshares_memo_keys.yaml",
+                 "config_bitshares_active_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
 
@@ -57,7 +58,8 @@ def sign_service(host, port):
 
 
 def load_sign_service_config():
-    Config.load(["config_bitshares_keys.yaml",
+    Config.load(["config_bitshares_memo_keys.yaml",
+                 "config_bitshares_active_keys.yaml",
                  "config_bitshares.yaml"])
 
 
@@ -100,6 +102,7 @@ def load_blockchain_monitor_config():
 @requires_blockchain
 def start_block_monitor():
     monitor = BlockchainMonitor()
+#     monitor.start_block = 15290125
     monitor.listen()
 
 
