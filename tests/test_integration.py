@@ -30,7 +30,10 @@ class TestIntegration(AFlaskTest):
 
         response = response.json
 
-        self.assertEqual(response["privateKey"], Config.get_config()["bitshares"]["exchange_account_active_key"])
+        if Config.get("bitshares", "keep_keys_private", True):
+            self.assertEqual(response["privateKey"], "keep_keys_private")
+        else:
+            self.assertEqual(response["privateKey"], Config.get_config()["bitshares"]["exchange_account_active_key"])
 
         addrs = split_unique_address(response["publicAddress"])
 

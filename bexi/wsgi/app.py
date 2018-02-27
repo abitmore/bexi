@@ -8,6 +8,7 @@ from .. import Config
 from .common.views import blueprint_common
 from .sign_service.views import blueprint_sign_service
 from .manage_service.views import blueprint_manage_service
+from .blockchain_monitor_service.views import blueprint_blockchain_monitor_service
 
 import pprint
 
@@ -71,5 +72,20 @@ def create_manage_service_app(app=None):
 
     flask_setup.setup_blueprint(blueprint_manage_service)
     app.register_blueprint(blueprint_manage_service)
+
+    return app
+
+
+def create_blockchain_monitor_service_app(app=None):
+    """ Sets the routes defined by the manage service blueprint as defined in :mod:`.blockchain_monitor_service.views`
+
+        :param app: the flask app, will be created if not given
+        :type app: object
+    """
+    if not app:
+        app = create_basic_flask_app()
+
+    flask_setup.setup_blueprint(blueprint_blockchain_monitor_service)
+    app.register_blueprint(blueprint_blockchain_monitor_service)
 
     return app

@@ -1,0 +1,20 @@
+FROM python:3
+ 
+# Create app directory
+RUN mkdir /app
+ADD requirements.txt /app
+
+# Install app requirements
+RUN pip3 install -r /app/requirements.txt
+
+# Install app
+ADD . /app
+ 
+# Set the default directory for our environment
+ENV HOME /app
+WORKDIR /app
+
+# Make settings persitent
+VOLUME ["/app"]
+ 
+CMD python3 cli.py blockchain_monitor_service

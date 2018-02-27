@@ -106,8 +106,8 @@ class Config(dict):
         This config getter method allows sophisticated and encapsulated access to the config file, while
         being able to define defaults in-code where necessary.
 
-        :param args: key to retrieve from config, nested in order
-        :type tuple of strings
+        :param args: key to retrieve from config, nested in order. if the last is not a string it is assumed to be the default, but giving default keyword is then forbidden
+        :type tuple of strings, last can be object
         :param message: message to be displayed when not found, defaults to entry in ERRORS dict with the
                                 key defined by the desired config keys in args (key1.key2.key2). For example
                                 Config.get("foo", "bar") will attempt to retrieve config["foo"]["bar"], and if
@@ -116,10 +116,21 @@ class Config(dict):
         :param default: default value if not found in config
         :type default: object
         """
+
+        # check if last in args is default value
+        if type(args[len(args) - 1]) != str:
+            if default:
+                raise KeyError("There can only be one default set. Either use default=value or add non-string values as last positioned argument!")
+            default = args[len(args) - 1]
+            args = args[0:len(args) - 1]
+
         try:
             nested = Config.get_config()
             for key in args:
-                nested = nested[key]
+                if type(key) == str:
+                    nested = nested[key]
+                else:
+                    raise KeyError("The given key " + str(key) + " is not valid.")
             if not nested:
                 raise KeyError()
         except KeyError:

@@ -9,7 +9,10 @@ class TestSignService(ATestnetTest):
     def test_wallets(self):
         address = implementations.create_address()
 
-        assert address["privateKey"] == Config.get_config()["bitshares"]["exchange_account_active_key"]
+        if Config.get("bitshares", "keep_keys_private", True):
+            assert address["privateKey"] == "keep_keys_private"
+        else:
+            assert address["privateKey"] == Config.get_config()["bitshares"]["exchange_account_active_key"]
         assert Config.get_config()["bitshares"]["exchange_account_id"] in address["publicAddress"]
 
     def test_sign(self):

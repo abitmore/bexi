@@ -4,7 +4,8 @@ from bexi.wsgi.app import (
     create_common_app,
     create_basic_flask_app,
     create_manage_service_app,
-    create_sign_service_app
+    create_sign_service_app,
+    create_blockchain_monitor_service_app
 )
 from bexi import Config, set_global_logger
 from bexi.connection import requires_blockchain
@@ -37,10 +38,10 @@ def wsgi(host, port):
     host = host or config["host"]
     port = port or config["port"]
     app.logger.info("Starting " + config["name"] + " with all wsgi services ...")
-    create_manage_service_app(
-        create_sign_service_app(
-            create_common_app(app))
-    ).run(host=host, port=port, debug=True)
+    create_common_app(app)
+    create_manage_service_app(app)
+    create_sign_service_app(app)
+    app.run(host=host, port=port, debug=True)
 
 
 @main.command()
@@ -52,9 +53,9 @@ def sign_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
     app.logger.info("Starting " + config["name"] + " sign service ...")
-    create_sign_service_app(
-        create_common_app(app)
-    ).run(host=host, port=port)
+    create_sign_service_app(app)
+    create_common_app(app)
+    app.run(host=host, port=port)
 
 
 def load_sign_service_config():
@@ -72,9 +73,9 @@ def manage_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
     app.logger.info("Starting " + config["name"] + " manage service ...")
-    create_manage_service_app(
-        create_common_app(app)
-    ).run(host=host, port=port)
+    create_manage_service_app(app)
+    create_common_app(app)
+    app.run(host=host, port=port)
 
 
 def load_manage_service_config():
@@ -96,6 +97,24 @@ def load_blockchain_monitor_config():
     Config.load(["config_bitshares_connection.yaml",
                  "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+
+@main.command()
+@click.option("--host")
+@click.option("--port")
+def blockchain_monitor_service(host, port):
+    load_blockchain_monitor_service_config()
+
+    host = host or config["host"]
+    port = port or config["port"]
+    app.logger.info("Starting " + config["name"] + " blockchain monitor service ...")
+    create_blockchain_monitor_service_app(app)
+    app.run(host=host, port=port)
+
+
+def load_blockchain_monitor_service_config():
+    Config.load(["config_bitshares_connection.yaml",
                  "config_operation_storage.yaml"])
 
 
@@ -122,6 +141,12 @@ def dump_configs():
     Config.load("config_common.yaml")
     load_blockchain_monitor_config()
     Config.dump_current("config_blockchain_monitor.json")
+
+    Config.reset()
+
+    Config.load("config_common.yaml")
+    load_blockchain_monitor_service_config()
+    Config.dump_current("config_blockchain_monitor_service.json")
 
     print("JSon configuration files for sign_service, manage_service and blockchain_monitor written to dump folder")
 

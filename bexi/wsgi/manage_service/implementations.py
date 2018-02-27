@@ -21,6 +21,7 @@ from ...connection import requires_blockchain
 from ... import Config, factory
 from ... import utils
 from ...operation_storage import operation_formatter
+from ...wsgi import flask_setup
 
 
 operation_storage = None
@@ -268,7 +269,13 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
 
     # encrypt memo
     # TODO this is a hack. python-bitshares issue is opened, once resolve, fix
-    bitshares_instance.wallet.setKeys(fromMemoWif)
+    if not fromMemoWif:
+        if from_address["account_id"] == Config.get("bitshares", "exchange_account_id"):
+            fromMemoWif = Config.get("bitshares", "exchange_account_memo_key")
+
+    if fromMemoWif:
+        bitshares_instance.wallet.setKeys(fromMemoWif)
+
     memo = Memo(
         from_account=from_account,
         to_account=to_account,
