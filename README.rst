@@ -74,6 +74,12 @@ Then initiate the blockchain monitor
 
 	$ python3 cli.py blockchain_monitor
   
+Start the blockchain monitor service (isalive wsgi response for blockchain monitor)
+
+.. code-block:: bash
+
+	$ python3 cli.py blockchain_monitor_service
+
 Start the sign service
 
 .. code-block:: bash
