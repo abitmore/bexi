@@ -86,7 +86,7 @@ class AzureOperationsStorage(BasicOperationStorage):
             time.sleep(0.1)
 
     def _create_operations_storage(self, purge):
-        self._operation_varients = ["status", "customer", "incident"]
+        self._operation_varients = ["incident", "status", "customer"]
         self._operation_tables = {}
         for variant in self._operation_varients:
             self._operation_tables[variant] = self._azure_config["operation_table"] + variant
@@ -220,8 +220,16 @@ class AzureOperationsStorage(BasicOperationStorage):
     def insert_operation(self, operation):
         # do basics
         operation = super(AzureOperationsStorage, self).insert_operation(operation)
-
-        self._insert(operation)
+        
+        try:
+            self._insert(operation)
+        except DuplicateOperationException as ex:
+            # could be an update to completed ...
+            if operation.get("block_num"):
+                operation.pop("status")
+                self.flag_operation_completed(operation)
+            else:
+                raise ex
 
     @retry_auto_reconnect
     def delete_operation(self, operation_or_incident_id):
