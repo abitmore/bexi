@@ -104,8 +104,11 @@ class BlockchainMonitor(object):
         self.start_block = kwargs.pop("start_block", None)
         self.stop_block = kwargs.pop("stop_block", None)
 
+        last_block = self.storage.get_last_head_block_num()
+        
+        logging.getLogger(__name__).debug("Init with start=" + str(self.start_block) + " stop=" + str(self.stop_block) + " last=" + str(last_block))
+        
         if not self.start_block:
-            last_block = self.storage.get_last_head_block_num()
             if last_block > 0:
                 self.start_block = last_block
 
