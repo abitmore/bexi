@@ -112,7 +112,7 @@ class BlockchainMonitor(object):
 
         if not self.start_block:
             if last_block > 0:
-                self.start_block = last_block
+                self.start_block = last_block + 1
 
     def unlock_wallet(self, pwd):
         """ Unlock the pybitshares wallet with the provided password
