@@ -52,13 +52,13 @@ class Config(dict):
                 )
                 stream = io.open(file_path, 'r', encoding='utf-8')
                 with stream:
-                    update(Config.data, yaml.load(stream))
+                    Config._nested_update(Config.data, yaml.load(stream))
 
             Config.source = ";".join(config_files)
         else:
             stream = urllib.request.urlopen(urllib.parse.urlparse(file_or_url).geturl())
             with stream:
-                update(Config.data, json.loads(stream.read()))
+                Config._nested_update(Config.data, json.loads(stream.read()))
             Config.source = file_or_url
 
         # check if a private key was given, and overwrite existing ones then
@@ -166,14 +166,14 @@ class Config(dict):
         with open(output, 'w') as outfile:
             json.dump(Config.data, outfile)
 
-
-def update(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            d[k] = update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
+    @staticmethod
+    def _nested_update(d, u):
+        for k, v in u.items():
+            if isinstance(v, collections.Mapping):
+                d[k] = Config._nested_update(d.get(k, {}), v)
+            else:
+                d[k] = v
+        return d
 
 
 def set_global_logger():

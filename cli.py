@@ -20,7 +20,7 @@ def main():
     Config.load("config_common.yaml")
     global app
     global config
-    config = Config.get_config()["wsgi"]
+    config = Config.get("wsgi")
     app = create_basic_flask_app()
     set_global_logger()
 

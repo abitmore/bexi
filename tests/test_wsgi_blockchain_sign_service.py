@@ -2,6 +2,7 @@ from bexi.wsgi.sign_service import implementations
 
 from tests.abstract_tests import ATestnetTest
 from bexi import Config
+import json
 
 
 class TestSignService(ATestnetTest):
@@ -38,7 +39,7 @@ class TestSignService(ATestnetTest):
             "signatures": [],
         }
         stx = implementations.sign(tx, [Config.get_config()["bitshares"]["exchange_account_active_key"]])
-        stx = stx["signedTransaction"]
+        stx = json.loads(stx["signedTransaction"])
         self.assertIn("signatures", stx)
         self.assertEqual(len(stx["signatures"]), 1)
 
@@ -46,6 +47,6 @@ class TestSignService(ATestnetTest):
             tx, [Config.get_config()["bitshares"]["exchange_account_active_key"],
                  self.get_customer_active_key()]
         )
-        stx = stx["signedTransaction"]
+        stx = json.loads(stx["signedTransaction"])
         self.assertIn("signatures", stx)
         self.assertEqual(len(stx["signatures"]), 2)

@@ -24,7 +24,7 @@ def sign(tx, keys):
         pass
 
     return dict(
-        signedTransaction=signedTransaction
+        signedTransaction=json.dumps(signedTransaction)
     )
 
 
