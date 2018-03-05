@@ -3,13 +3,15 @@
 """
 
 import datetime
+from flask import json
 
 from bitshares.account import Account
 from bitshares.amount import Amount
 from bitshares.memo import Memo
 from bitsharesbase import operations
 from bitshares.transactionbuilder import TransactionBuilder
-from bitshares.exceptions import AccountDoesNotExistsException
+from bitshares.exceptions import AccountDoesNotExistsException,\
+    AssetDoesNotExistsException
 
 from ...addresses import (
     split_unique_address,
@@ -21,7 +23,7 @@ from ...connection import requires_blockchain
 from ... import Config, factory
 from ... import utils
 from ...operation_storage import operation_formatter
-from ...wsgi import flask_setup
+from bitsharesapi.exceptions import UnhandledRPCError
 
 
 operation_storage = None
@@ -69,6 +71,10 @@ class NotEnoughBalanceException(Exception):
     pass
 
 
+class TransactionExpiredException(Exception):
+    pass
+
+
 def get_asset(assetId):
         all_assets = Config.get_bitshares_config()["assets"]
         for asset in all_assets:
@@ -85,8 +91,12 @@ def get_asset(assetId):
 @requires_blockchain
 def validate_address(address, bitshares_instance=None):
     try:
-        Account(split_unique_address(address)["account_id"], bitshares_instance=bitshares_instance)
-        valid = True
+        split = split_unique_address(address)
+        if not split.get("customer_id"):
+            valid = False
+        else:
+            Account(split["account_id"], bitshares_instance=bitshares_instance)
+            valid = True
     except AccountDoesNotExistsException:
         valid = False
     return {"isValid": valid}
@@ -249,7 +259,10 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         to_address["account_id"],
         bitshares_instance=bitshares_instance)
 
-    if utils.is_exchange_account(from_account["id"]):
+    if utils.is_exchange_account(from_account["id"]) and utils.is_exchange_account(to_account["id"]):
+        # internal shift
+        memo_plain = create_memo(toAddress, incidentId)
+    elif utils.is_exchange_account(from_account["id"]):
         # Withdrawal
         memo_plain = create_memo(toAddress, incidentId)
     elif utils.is_exchange_account(to_account["id"]):
@@ -258,14 +271,17 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
     else:
         raise
 
-    # Construct amount
-    amount = Amount(
-        {
-            "amount": amount,
-            "asset_id": asset_id
-        },
-        bitshares_instance=bitshares_instance
-    )
+    try:
+        # Construct amount
+        amount = Amount(
+            {
+                "amount": amount,
+                "asset_id": asset_id
+            },
+            bitshares_instance=bitshares_instance
+        )
+    except AssetDoesNotExistsException:
+        raise AssetNotFoundException()
 
     # encrypt memo
     # TODO this is a hack. python-bitshares issue is opened, once resolve, fix
@@ -298,11 +314,14 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
     if bitshares_instance.prefix != "BTS":
         tx["prefix"] = bitshares_instance.prefix
 
-    return {"transactionContext": tx}
+    return {"transactionContext": json.dumps(tx)}
 
 
 @requires_blockchain
 def broadcast_transaction(signed_transaction, bitshares_instance=None):
+    if type(signed_transaction) == str:
+        signed_transaction = json.loads(signed_transaction)
+
     tx = TransactionBuilder(
         signed_transaction,
         bitshares_instance=bitshares_instance
@@ -330,22 +349,50 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
     for op_in_tx, operation in enumerate(tx.get("operations", [])):
         storage.insert_operation(map_operation(tx, op_in_tx, operation))
 
-    if from_account != to_account:
+    exception_occured = None
+    try:
+        # check validity
+        tx.verify_authority()
+    except Exception as e:
+        exception_occured = e
+
+    # check expiration
+    if datetime.datetime.now() <= datetime.datetime.strptime(tx["expiration"], "%Y-%m-%dT%H:%M:%S"):  # UTC time
+        exception_occured = TransactionExpiredException()
+
+    if exception_occured is None and from_account != to_account:
         try:
             tx = tx.broadcast()
-            return True
+            if tx.get("id", None):
+                return {"chain_identifier": tx["id"] + ":" + str(tx["trx_num"]), "block_num": tx["block_num"]}
+            else:
+                return {"chain_identifier": "no_id_given", "block_num": -1}
+        except UnhandledRPCError as e:
+            if "insufficient_balance" in str(e):
+                raise NotEnoughBalanceException()
+            elif "amount.amount > 0" in str(e):
+                raise AmountTooSmallException()
+            else:
+                raise e
         except Exception as e:
-            for op_in_tx, operation in enumerate(tx.get("operations", [])):
-                storage.flag_operation_failed(map_operation(tx, op_in_tx, operation),
-                                              str(e))
-            return False
-    else:
+            exception_occured = e
+
+    if exception_occured:
+        # this operation might not exist
+        for op_in_tx, operation in enumerate(tx.get("operations", [])):
+            storage.flag_operation_failed(map_operation(tx, op_in_tx, operation),
+                                          str(exception_occured))
+        raise exception_occured
+
+    if from_account == to_account:
         # This happens in case of virtual consolidation transactions/transfers
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
             op = map_operation(tx, op_in_tx, operation)
             op["block_num"] = -1
             storage.flag_operation_completed(op)
-        return True
+        return {"chain_identifier": "virtual_transfer", "block_num": op["block_num"]}
+    else:
+        raise Exception("This should be unreachable")
 
 
 def get_broadcasted_transaction(operationId):

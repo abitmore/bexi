@@ -6,10 +6,14 @@ from ... import Config
 from ...transaction_signer import sign_transaction
 from ...addresses import create_unique_address
 
+from flask import json
+
 
 def sign(tx, keys):
     """ This method is used to connect the transaction signer with the API.
     """
+    if type(tx) == str:
+        tx = json.loads(tx)
     if keys[0] == "keep_keys_private" and Config.get("bitshares", "keep_keys_private", True):
         keys = [Config.get("bitshares", "exchange_account_active_key")]
 

@@ -29,7 +29,7 @@ def get_operation_storage(use=None, purge=None):
     if not use:
         # default operation storage is wanted, print config for clarification
         printConfig = True
-        use = Config.get_config()["operation_storage"]["use"]
+        use = Config.get("operation_storage", "use")
 
     def get_mongodb(use_config):
         return MongoDBOperationsStorage(mongodb_config=use_config)
@@ -60,7 +60,7 @@ def get_operation_storage(use=None, purge=None):
         else:
             return AzureOperationsStorage(azure_config=use_config, purge=purge)
 
-    config = Config.get_config()["operation_storage"]
+    config = Config.get("operation_storage")
     use_config = config[use]
 
     use_choice = {

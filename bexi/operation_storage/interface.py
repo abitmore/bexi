@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from bexi.operation_storage import operation_formatter
-from bexi.utils import date_to_string
+from ..operation_storage import operation_formatter
+from ..utils import date_to_string
+from .. import Config
+import time
 
 
 class OperationStorageException(Exception):
@@ -79,6 +81,19 @@ class IOperationStorage(ABC):
         """
         Inserts the operation into the storage. Operation status
         can be in_progress or completed.
+
+        :param operation: operations struct adhering to the json schema definitions
+        :type operation: dict
+        :raises: InvalidOperationException: if the operation is not well defined
+        :raises: DuplicateOperationException: if the operation already exists in the storage
+        :raises: OperationStorageLostException: any technical problems contacting the storage
+        """
+
+    @abstractmethod
+    def insert_or_update_operation(self, operation):
+        """
+        Inserts the operation, or updates it into the storage. Operation status
+        can be in_progress or completed
 
         :param operation: operations struct adhering to the json schema definitions
         :type operation: dict
@@ -210,7 +225,8 @@ def retry_auto_reconnect(func):
     """
 
     def f_retry(self, *args, **kwargs):
-        num_tries = 3
+        num_tries = Config.get("operation_storage", "retry_policy", "num", 3)
+        wait_in_ms = Config.get("operation_storage", "retry_policy", "wait_in_ms", 0)
         exceptions = self.get_retry_exceptions()
         last_exception = None
         for i in range(num_tries):  # @UnusedVariable
@@ -218,6 +234,8 @@ def retry_auto_reconnect(func):
                 return func(self, *args, **kwargs)
             except exceptions as e:
                 last_exception = e
+                if wait_in_ms > 0:
+                    time.sleep(wait_in_ms / 1000)
                 continue
         raise OperationStorageLostException(last_exception)
     return f_retry

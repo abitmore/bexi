@@ -141,7 +141,7 @@ class Config(dict):
                 else:
                     message = "Configuration key {0} not found in {1}!"
                 message = message.format(lookup_key, Config.source)
-            if default:
+            if default is not None:
                 logging.getLogger(__name__).debug(message + " Using given default value.")
                 return default
             else:

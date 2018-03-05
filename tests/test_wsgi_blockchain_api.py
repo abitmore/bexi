@@ -9,6 +9,7 @@ from bexi.operation_storage.interface import AddressAlreadyTrackedException,\
     AddressNotTrackedException
 from bexi.wsgi import manage_service
 from bexi.wsgi import sign_service
+from flask import json
 
 
 class TestBlockchainApi(ATestOperationStorage):
@@ -104,7 +105,7 @@ class TestBlockchainApi(ATestOperationStorage):
             False
         )
 
-        tx = tx["transactionContext"]
+        tx = json.loads(tx["transactionContext"])
 
         self.assertEqual(
             len(tx["operations"]),
@@ -146,7 +147,7 @@ class TestBlockchainApi(ATestOperationStorage):
             False
         )
 
-        tx = tx["transactionContext"]
+        tx = json.loads(tx["transactionContext"])
 
         self.assertEqual(
             len(tx["operations"]),
@@ -187,7 +188,7 @@ class TestBlockchainApi(ATestOperationStorage):
             10000,
             True       # This changes behavior!!!!!!!!!!!!!!!
         )
-        tx = tx["transactionContext"]
+        tx = json.loads(tx["transactionContext"])
         op = tx["operations"][0][1]
         self.assertLess(
             op["amount"]["amount"],
@@ -215,7 +216,7 @@ class TestBlockchainApi(ATestOperationStorage):
             [utils.get_exchange_active_key()]
         )
 
-        assert implementations.broadcast_transaction(
+        implementations.broadcast_transaction(
             stx["signedTransaction"]
         )
 

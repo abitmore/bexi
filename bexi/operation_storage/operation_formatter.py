@@ -7,6 +7,8 @@ import io
 import jsonschema
 import uuid
 
+import hashlib
+
 
 def decode_operation(operation):
     """ The given operation comes directly from the blockchain and is here reformatted.
@@ -41,18 +43,21 @@ def decode_operation(operation):
     if operation.get("message"):
         new_operation["message"] = operation["message"]
 
+    chain_identifier = str(
+        operation.get("transaction_id")
+    ) + ":" + str(
+        operation.get("op_in_tx")
+    )
+
     if not memo["incident_id"]:
-        memo["incident_id"] = str(uuid.uuid4())
+        memo["incident_id"] = chain_identifier
 
     data = {
-        "chain_identifier": str(
-            operation.get("transaction_id")
-        ) + ":" + str(
-            operation.get("op_in_tx")
-        ),
+        "chain_identifier": chain_identifier,
         "customer_id": memo["customer_id"],
         "incident_id": memo["incident_id"]
     }
+
     new_operation.update(data)
 
     return new_operation

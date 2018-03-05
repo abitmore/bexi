@@ -12,7 +12,8 @@ from ...operation_storage.interface import AddressAlreadyTrackedException,\
     AddressNotTrackedException, DuplicateOperationException,\
     OperationNotFoundException
 from .implementations import AssetNotFoundException, NotEnoughBalanceException,\
-    AmountTooSmallException
+    AmountTooSmallException, TransactionExpiredException
+from bitsharesapi.exceptions import UnhandledRPCError
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -34,7 +35,7 @@ def _body(parameter_name, default_value=None):
 
 def _abort(http_status_code, error_code=None):
     if error_code:
-        raise(ErrorCodeException(http_status_code, error_code))
+        raise ErrorCodeException(http_status_code, error_code)
     else:
         abort(http_status_code)
 
@@ -150,6 +151,8 @@ def build_transaction():
     :raises: 400 Bad Request - among other causes these specific error codes are distinguished:
                 amountIsTooSmall - amount is too small to execute transaction
                 notEnoughBalance - transaction can’t be executed due to balance insufficiency on the source address
+                transactionExpired - transaction has already expired
+                assetNotFound - desired asset could not be found
 
     """
     try:
@@ -164,11 +167,11 @@ def build_transaction():
                 _body("includeFee")
             ))
     except AmountTooSmallException:
-        # controlled abort, no logging
         _abort(400, "amountIsTooSmall")
     except NotEnoughBalanceException:
-        # controlled abort, no logging
         _abort(400, "notEnoughBalance")
+    except AssetNotFoundException:
+        _abort(400, "assetNotFound")
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast", methods=["POST"])
@@ -183,18 +186,15 @@ def broadcast_transaction():
 
     """
     try:
-        valid = implementations.broadcast_transaction(_body("signedTransaction"))
-        if not valid:
-            abort(400)
         return jsonify(
-            valid
+            implementations.broadcast_transaction(_body("signedTransaction"))
         )
     except NotEnoughBalanceException:
-        # controlled abort, no logging
         _abort(400, "notEnoughBalance")
     except DuplicateOperationException:
-        # controlled abort, no logging
         abort(409)
+    except TransactionExpiredException:
+        _abort(400, "transactionExpired")
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast/single/<operationId>", methods=["GET"])

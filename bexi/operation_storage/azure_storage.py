@@ -12,7 +12,8 @@ from .interface import (
     AddressAlreadyTrackedException,
     OperationNotFoundException,
     DuplicateOperationException,
-    InvalidOperationException)
+    InvalidOperationException,
+    OperationStorageException)
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -86,7 +87,7 @@ class AzureOperationsStorage(BasicOperationStorage):
             time.sleep(0.1)
 
     def _create_operations_storage(self, purge):
-        self._operation_varients = ["incident", "status", "customer"]
+        self._operation_varients = ["incident", "customer", "status"]
         self._operation_tables = {}
         for variant in self._operation_varients:
             self._operation_tables[variant] = self._azure_config["operation_table"] + variant
@@ -127,6 +128,9 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def track_balance(self, address):
+        split = split_unique_address(address)
+        if not split.get("customer_id") or not split.get("account_id"):
+            raise OperationStorageException()
         try:
             self._service.insert_entity(
                 self._azure_config["address_table"],
@@ -220,14 +224,24 @@ class AzureOperationsStorage(BasicOperationStorage):
     def insert_operation(self, operation):
         # do basics
         operation = super(AzureOperationsStorage, self).insert_operation(operation)
-        
+
+        self._insert(operation)
+
+    @retry_auto_reconnect
+    def insert_or_update_operation(self, operation):
+        # do basics
+        operation = super(AzureOperationsStorage, self).insert_operation(operation)
+
         try:
             self._insert(operation)
         except DuplicateOperationException as ex:
             # could be an update to completed ...
             if operation.get("block_num"):
-                operation.pop("status")
-                self.flag_operation_completed(operation)
+                try:
+                    operation.pop("status")
+                    self.flag_operation_completed(operation)
+                except OperationNotFoundException:
+                    raise ex
             else:
                 raise ex
 

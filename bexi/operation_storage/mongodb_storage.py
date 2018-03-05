@@ -10,7 +10,8 @@ from .interface import (
     AddressAlreadyTrackedException,
     OperationNotFoundException,
     DuplicateOperationException,
-    InvalidOperationException)
+    InvalidOperationException,
+    OperationStorageException)
 
 
 class MongoDBOperationsStorage(BasicOperationStorage):
@@ -115,6 +116,9 @@ class MongoDBOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def track_balance(self, address):
+        split = split_unique_address(address)
+        if not split.get("customer_id") or not split.get("account_id"):
+            raise OperationStorageException()
         try:
             self._address_storage.insert_one(
                 {"address": address,
@@ -167,6 +171,26 @@ class MongoDBOperationsStorage(BasicOperationStorage):
             )
         except pymongo.errors.DuplicateKeyError:
             raise DuplicateOperationException()
+
+    @retry_auto_reconnect
+    def insert_or_update_operation(self, operation):
+        # do basics
+        operation = super(MongoDBOperationsStorage, self).insert_operation(operation)
+
+        try:
+            self._operations_storage.insert_one(
+                operation.copy()
+            )
+        except pymongo.errors.DuplicateKeyError:
+            # could be an update to completed ...
+            if operation.get("block_num"):
+                try:
+                    operation.pop("status")
+                    self.flag_operation_completed(operation)
+                except OperationNotFoundException:
+                    raise DuplicateOperationException()
+            else:
+                raise DuplicateOperationException()
 
     @retry_auto_reconnect
     def delete_operation(self, operation_or_incident_id):

@@ -1,6 +1,9 @@
 from flask import jsonify, current_app
 from werkzeug.exceptions import HTTPException, InternalServerError
 import os
+import traceback
+
+from .. import Config
 
 
 def setup_blueprint(blueprint):
@@ -20,15 +23,15 @@ def setup_blueprint(blueprint):
     blueprint.errorhandler(InternalServerError)(handle_exception)
 
 
-class ErrorCodeException(HTTPException):
+class ErrorCodeException(Exception):
     """
-        This exception is a HTTPException that can also be inputed with an error_code.
+        This exception is a Exception that can also be inputed with an error_code.
         This code will be returned in the error response
     """
 
     def __init__(self, http_status_code, error_code):
-        super(ErrorCodeException, self).__init__(http_status_code)
         self.error_code = error_code
+        self.http_status_code = http_status_code
 
 
 def get_error_response(ex):
@@ -40,11 +43,16 @@ def get_error_response(ex):
         :rtype: dict
     """
     error_code = "unknown"
-    if ex.__class__ == ErrorCodeException:
+    if isinstance(ex, ErrorCodeException):
         error_code = ex.error_code
 
+    if Config.get("wsgi", "detailed_error", True):
+        message = ex.__class__.__name__ + "\n" + ''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__))
+    else:
+        message = str(ex)
+
     return {
-        "errorMessage": str(ex),
+        "errorMessage": message,
         "errorCode": error_code
     }
 
@@ -60,6 +68,8 @@ def handle_exception(e):
     code = 500
     if isinstance(e, HTTPException):
         code = e.code
+    if isinstance(e, ErrorCodeException):
+        code = e.http_status_code
     resp = jsonify(get_error_response(e))
     resp.status_code = code
     current_app.logger.exception(e)

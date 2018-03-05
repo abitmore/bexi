@@ -81,9 +81,11 @@ class BlockchainMonitor(object):
             "watch_mode", "irreversible")
 
         # Storage factory
-        self.storage = get_operation_storage(
-            self.config["operation_storage"]["use"]
-        )
+        self.storage = kwargs.pop("storage", None)
+        if not self.storage:
+            self.storage = get_operation_storage(
+                self.config["operation_storage"]["use"]
+            )
 
         # Obtain data from the Blockchain about our account
         self.my_account = Account(
@@ -105,9 +107,9 @@ class BlockchainMonitor(object):
         self.stop_block = kwargs.pop("stop_block", None)
 
         last_block = self.storage.get_last_head_block_num()
-        
+
         logging.getLogger(__name__).debug("Init with start=" + str(self.start_block) + " stop=" + str(self.stop_block) + " last=" + str(last_block))
-        
+
         if not self.start_block:
             if last_block > 0:
                 self.start_block = last_block
@@ -225,9 +227,9 @@ class BlockchainMonitor(object):
             .. note:: Three cases exist that prevent us from decoding a memo
                 that lead to a special message being used instead:
 
-                * ``!MEMO KEY MISSING!``: In the case the decryption key was not provided
-                * ``!NO MEMO PROVIDED!``: In the case no memo was provided
-                * ``!COULDN'T DECODE MEMO!``: In the case, the memo couldn't be decrypted
+                * ``memo_key_missing``: In the case the decryption key was not provided
+                * ````: In the case no memo was provided
+                * ``decoding_not_possible``: In the case, the memo couldn't be decrypted
 
         """
         try:
@@ -235,11 +237,11 @@ class BlockchainMonitor(object):
                 bitshares_instance=self.bitshares
             ).decrypt(payload["memo"])
         except MissingKeyError:
-            decoded_memo = "!MEMO KEY MISSING!"
+            decoded_memo = "memo_key_missing"
         except KeyError:
             decoded_memo = ""
         except ValueError:
-            decoded_memo = "!COULDN'T DECODE MEMO!"
+            decoded_memo = "decoding_not_possible"
         return decoded_memo
 
     def process_operation(self, operation, tx_id_getter):
