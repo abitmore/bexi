@@ -13,7 +13,7 @@ from bexi import connection
 class ATestnetTest(unittest.TestCase):
 
     def setUp(self):
-        if Config.data and Config.data["network_type"] != "Test":
+        if Config.data:
             connection.reset()
 
         Config.load()
@@ -39,14 +39,7 @@ class ATestnetTest(unittest.TestCase):
 class AFlaskTest(TestCase):
 
     def create_app(self):
-        if Config.data and Config.data["network_type"] != "Test":
-            connection.reset()
-
-        Config.load()
-        Config.load("../tests/config_test.yaml")
-        Config.data["operation_storage"]["use"] = "azuretest"
-        Config.data["network_type"] = "Test"
-        Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = True
+        self.setUp()
 
         app = create_manage_service_app(
             create_sign_service_app(
@@ -55,7 +48,7 @@ class AFlaskTest(TestCase):
         return app
 
     def setUp(self):
-        if Config.data and Config.data["network_type"] != "Test":
+        if Config.data:
             connection.reset()
 
         Config.load()
