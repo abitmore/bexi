@@ -291,6 +291,6 @@ class BlockchainMonitor(object):
         logging.getLogger(__name__).debug("Recognized accounts, inserting transfer " + str(operation["transaction_id"]))
 
         try:
-            self.storage.insert_operation(operation)
+            self.storage.insert_or_update_operation(operation)
         except DuplicateOperationException:
             pass
