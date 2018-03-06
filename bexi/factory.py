@@ -71,6 +71,6 @@ def get_operation_storage(use=None, purge=None):
     }
 
     if printConfig:
-        logging.getLogger(__name__).debug("Operation storage initialized with ... \n" + pprint.pformat(use_config))
+        logging.getLogger(__name__).debug("Operation storage initialized with use=" + use)
 
     return use_choice[use]()

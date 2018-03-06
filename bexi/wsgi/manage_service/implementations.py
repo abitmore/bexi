@@ -2,7 +2,7 @@
     in :mod:`.views`.
 """
 
-import datetime
+from datetime import datetime
 from flask import json
 
 from bitshares.account import Account
@@ -24,6 +24,8 @@ from ... import Config, factory
 from ... import utils
 from ...operation_storage import operation_formatter
 from bitsharesapi.exceptions import UnhandledRPCError
+import time
+from graphenebase import transactions
 
 
 operation_storage = None
@@ -42,7 +44,10 @@ def _get_os(storage=None):
 
 def get_all_assets(take, continuation):
     take = int(take)
-    start = int(continuation)
+    try:
+        start = int(continuation)
+    except TypeError:
+        start = 0
     end = start + take
 
     all_assets_config = Config.get_bitshares_config()["assets"]
@@ -116,8 +121,6 @@ def get_balances(take, continuation):
     take = int(take)
     try:
         start = int(continuation)
-        if start != 0:
-            raise Exception("Ensure sorting of the balances within operation storage first")
     except TypeError:
         start = 0
     end = start + take
@@ -148,7 +151,7 @@ def get_address_history_from(address, take, after_hash):
     all_operations = []
 
     address = split_unique_address(address)
-    afterTimestamp = datetime.datetime.fromtimestamp(0)
+    afterTimestamp = datetime.fromtimestamp(0)
     for operation in _get_os().get_operations_completed(
             filter_by={"customer_id": address["customer_id"]}):
         # deposit, thus from
@@ -179,7 +182,7 @@ def get_address_history_to(address, take, after_hash):
     all_operations = []
 
     address = split_unique_address(address)
-    afterTimestamp = datetime.datetime.fromtimestamp(0)
+    afterTimestamp = datetime.fromtimestamp(0)
     for operation in _get_os().get_operations_completed(
             filter_by={"customer_id": address["customer_id"]}):
         # deposit, thus from
@@ -240,7 +243,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         )
         tx.appendOps(op)
         tx.set_expiration(
-            60 * 30  # 30 mins
+            Config.get("bitshares", "transaction_expiration_in_sec", 60 * 60 * 24)  # 24 hours
         )
 
         # Build the transaction, obtain fee to be paid
@@ -356,10 +359,6 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
     except Exception as e:
         exception_occured = e
 
-    # check expiration
-    if datetime.datetime.now() <= datetime.datetime.strptime(tx["expiration"], "%Y-%m-%dT%H:%M:%S"):  # UTC time
-        exception_occured = TransactionExpiredException()
-
     if exception_occured is None and from_account != to_account:
         try:
             tx = tx.broadcast()
@@ -372,6 +371,8 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
                 raise NotEnoughBalanceException()
             elif "amount.amount > 0" in str(e):
                 raise AmountTooSmallException()
+            elif "now <= trx.expiration" in str(e):
+                raise TransactionExpiredException()
             else:
                 raise e
         except Exception as e:

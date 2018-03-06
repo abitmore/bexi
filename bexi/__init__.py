@@ -125,13 +125,13 @@ class Config(dict):
             args = args[0:len(args) - 1]
 
         try:
-            nested = Config.get_config()
+            nested = Config.data
             for key in args:
                 if type(key) == str:
                     nested = nested[key]
                 else:
                     raise KeyError("The given key " + str(key) + " is not valid.")
-            if not nested:
+            if nested is None:
                 raise KeyError()
         except KeyError:
             lookup_key = '.'.join(str(i) for i in args)

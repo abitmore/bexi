@@ -8,3 +8,4 @@ wsgi:
  version: 0.0.2
  host: localhost
  port: 5000
+ detailed_error: True

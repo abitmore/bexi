@@ -1,4 +1,7 @@
 operation_storage:
+ retry_policy:
+  num: 3
+  wait_in_ms: 0
  use: azuretest
  mongodb:
      seeds: 
