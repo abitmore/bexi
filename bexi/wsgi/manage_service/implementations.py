@@ -403,14 +403,14 @@ def get_broadcasted_transaction(operationId):
         "operationId": operation["incident_id"],
         "state": operation["status"],
         "timestamp": operation["timestamp"],
-        "amount": operation["amount_value"],
-        "fee": operation["fee"]["amount"],
+        "amount": str(operation["amount_value"]),
+        "fee": str(operation["fee_value"]),
         "hash": operation["chain_identifier"],
-        "block": operation["block_num"],
+        "block": operation["block_num"]
     }
     if r_op["state"] == "failed":
         r_op["error"] = "An error occured while broadcasting the transaction"
-        r_op["errorCode"] = "unknown"
+        r_op["errorCode"] = operation["message"]
 
     return r_op
 

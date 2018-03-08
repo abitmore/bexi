@@ -6,7 +6,7 @@ from bexi.addresses import get_address_from_operation, create_unique_address, DE
 from bexi.wsgi.manage_service.views import implementations
 from bexi.wsgi.manage_service.implementations import AssetNotFoundException
 from bexi.operation_storage.interface import AddressAlreadyTrackedException,\
-    AddressNotTrackedException
+    AddressNotTrackedException, OperationNotFoundException
 from bexi.wsgi import manage_service
 from bexi.wsgi import sign_service
 from flask import json
@@ -219,6 +219,20 @@ class TestBlockchainApi(ATestOperationStorage):
         implementations.broadcast_transaction(
             stx["signedTransaction"]
         )
+
+    def test_get_and_delete_broadcasted(self):
+        completed = self.get_completed_op()
+        completed["incident_id"] = "some_incident"
+        implementations._get_os().insert_operation(completed)
+
+        operation = implementations.get_broadcasted_transaction("some_incident")
+
+        implementations.delete_broadcasted_transaction("some_incident")
+
+        self.assertRaises(
+            OperationNotFoundException,
+            implementations.get_broadcasted_transaction,
+            "some_incident")
 
     def test_get_address_history_from(self):
         transfer = self.get_completed_op()

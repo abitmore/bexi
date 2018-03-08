@@ -15,5 +15,3 @@ bitshares:
           address: None
           name: EUR
           accuracy: 4
-          
-    transaction_expiration_in_sec: 43200
