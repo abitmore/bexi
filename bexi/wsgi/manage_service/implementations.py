@@ -162,7 +162,7 @@ def get_address_history_from(address, take, after_hash):
                 "fromAddress": get_from_address_from_operation(operation),
                 "toAddress": get_to_address_from_operation(operation),
                 "assetId": operation["amount_asset_id"],
-                "amount": operation["amount_value"],
+                "amount": str(operation["amount_value"]),
                 "hash": operation["chain_identifier"]
             })
             if operation["chain_identifier"] == after_hash:
@@ -193,7 +193,7 @@ def get_address_history_to(address, take, after_hash):
                 "fromAddress": get_from_address_from_operation(operation),
                 "toAddress": get_to_address_from_operation(operation),
                 "assetId": operation["amount_asset_id"],
-                "amount": operation["amount_value"],
+                "amount": str(operation["amount_value"]),
                 "hash": operation["chain_identifier"]
             })
             if operation["chain_identifier"] == after_hash:
