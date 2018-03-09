@@ -134,11 +134,15 @@ class TestIntegration(AFlaskTest):
             utils.get_exchange_active_key()
         )
 
+        response = self.client.post(url_for('Blockchain.Api.get_balances') + "?take=1")
+        assert response.status_code == 200
+        self.assertEqual(response.json["items"][0]["balance"], 10000)
+
         block_num = build_sign_and_broadcast(
             {
                 "operationId": "withrawal",
                 "fromAddress": addressHW,
-                "toAddress": create_unique_address(self.get_customer_id(), customer_id),
+                "toAddress": create_unique_address(self.get_customer_id(), ""),
                 "assetId": "1.3.0",
                 "amount": 100000,
                 "includeFee": False

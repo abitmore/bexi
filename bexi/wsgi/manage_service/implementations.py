@@ -264,7 +264,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
 
     if utils.is_exchange_account(from_account["id"]) and utils.is_exchange_account(to_account["id"]):
         # internal shift
-        memo_plain = create_memo(toAddress, incidentId)
+        memo_plain = create_memo(fromAddress, incidentId)
     elif utils.is_exchange_account(from_account["id"]):
         # Withdrawal
         memo_plain = create_memo(toAddress, incidentId)

@@ -87,7 +87,7 @@ class AzureOperationsStorage(BasicOperationStorage):
             time.sleep(0.1)
 
     def _create_operations_storage(self, purge):
-        self._operation_varients = ["incident", "customer", "status"]
+        self._operation_varients = ["incident", "status"]  #  "customer"
         self._operation_tables = {}
         for variant in self._operation_varients:
             self._operation_tables[variant] = self._azure_config["operation_table"] + variant

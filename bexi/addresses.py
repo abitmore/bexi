@@ -93,7 +93,17 @@ def create_memo(address, incident_id):
         :type incident_id: str
     """
     address = split_unique_address(address)
-    return address["customer_id"] + DELIMITER + incident_id
+
+    memo = ""
+
+    if address["customer_id"]:
+        memo = memo + address["customer_id"]
+    if incident_id:
+        if memo != "":
+            memo = memo + DELIMITER + incident_id
+        else:
+            memo = " " + DELIMITER + incident_id
+    return memo
 
 
 def split_memo(memo):
