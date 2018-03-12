@@ -31,6 +31,30 @@ class TestBlockchainApi(ATestOperationStorage):
         assert implementations.get_all_assets(5, 0) ==\
             {'continuation': None, 'items': [{'assetId': '1.3.0', 'address': 'None', 'name': 'BTS', 'accuracy': 5}, {'assetId': '1.3.121', 'address': 'None', 'name': 'USD', 'accuracy': 4}, {'assetId': '1.3.120', 'address': 'None', 'name': 'EUR', 'accuracy': 4}]}
 
+        implementations.get_all_assets(0)
+
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          "!@")
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          "32.56")
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          "32,25")
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          43.2)
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          "querty")
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          "")
+        self.assertRaises(ValueError,
+                          implementations.get_all_assets,
+                          None)
+
     def test_get_asset(self):
         assert implementations.get_asset('1.3.0') ==\
             {'assetId': '1.3.0', 'address': 'None', 'name': 'BTS', 'accuracy': 5}
@@ -45,6 +69,9 @@ class TestBlockchainApi(ATestOperationStorage):
             {'isValid': True}
 
         assert implementations.validate_address(create_unique_address('this_account_will_never_exist')) ==\
+            {'isValid': False}
+
+        assert implementations.validate_address(create_unique_address('!@$%25^&*(')) ==\
             {'isValid': False}
 
     def test_observe_address(self):
@@ -227,12 +254,23 @@ class TestBlockchainApi(ATestOperationStorage):
 
         operation = implementations.get_broadcasted_transaction("some_incident")
 
+        assert operation.get("block", None) is not None
+
         implementations.delete_broadcasted_transaction("some_incident")
 
         self.assertRaises(
             OperationNotFoundException,
             implementations.get_broadcasted_transaction,
             "some_incident")
+
+        in_progress = self.get_in_progress_op()
+        in_progress["incident_id"] = "some_incident"
+        implementations._get_os().insert_operation(in_progress)
+        implementations._get_os().flag_operation_failed(in_progress, message="manual fail")
+
+        operation = implementations.get_broadcasted_transaction("some_incident")
+
+        assert operation.get("block", None) is None
 
     def test_get_address_history_from(self):
         transfer = self.get_completed_op()
@@ -246,7 +284,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'operationId': 'incident_id_1234', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::NULL', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': 50000000, 'hash': 'chainidentifier_1234'}]
+            [{'operationId': 'incident_id_1234', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::NULL', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
         )
 
     def test_get_address_history_to(self):
@@ -261,5 +299,5 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'operationId': 'incident_id_1235', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::NULL', 'assetId': '1.3.121', 'amount': 50000000, 'hash': 'chainidentifier_1235'}]
+            [{'operationId': 'incident_id_1235', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::NULL', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )

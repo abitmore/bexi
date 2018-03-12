@@ -78,10 +78,10 @@ def get_asset(assetId):
         )
     except AssetNotFoundException:
         # controlled abort, no logging
-        abort(204)
+        return jsonify(data=[]), 204
 
 
-@blueprint_manage_service.route("/api/addresses/<address>/validity")
+@blueprint_manage_service.route("/api/addresses/<address>/validity", methods=["GET"])
 def address_validity(address):
     """
     [GET] /api/addresses/{address}/validity
@@ -130,10 +130,10 @@ def unobserve_address(address):
         )
     except AddressNotTrackedException:
         # controlled abort, no logging
-        abort(204)
+        return jsonify(data=[]), 204
 
 
-@blueprint_manage_service.route("/api/balances", methods=["POST"])
+@blueprint_manage_service.route("/api/balances", methods=["GET"])
 def get_balances():
     """
     [GET] /api/balances?take=integer&[continuation=string]

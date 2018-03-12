@@ -42,7 +42,10 @@ def _get_os(storage=None):
     return operation_storage
 
 
-def get_all_assets(take, continuation):
+def get_all_assets(take, continuation=None):
+    if type(take) != int and type(take) != str:
+        raise ValueError()
+
     take = int(take)
     try:
         start = int(continuation)
@@ -102,28 +105,37 @@ def validate_address(address, bitshares_instance=None):
         else:
             Account(split["account_id"], bitshares_instance=bitshares_instance)
             valid = True
-    except AccountDoesNotExistsException:
+    except Exception:
         valid = False
     return {"isValid": valid}
 
 
 def observe_address(address):
-    _get_os().track_balance(address)
+    if validate_address(address):
+        _get_os().track_balance(address)
+    else:
+        raise AccountDoesNotExistsException()
 
 
 def unobserve_address(address):
-    _get_os().untrack_balance(address)
+    if validate_address(address):
+        _get_os().untrack_balance(address)
+    else:
+        raise AccountDoesNotExistsException()
 
 
 def get_balances(take, continuation):
-    balancesDict = _get_os().get_balances()
+    if type(take) != int and type(take) != str:
+        raise ValueError()
 
     take = int(take)
     try:
         start = int(continuation)
     except TypeError:
         start = 0
-    end = start + take
+        end = start + take
+
+    balancesDict = _get_os().get_balances()
 
     all_accounts = sorted(balancesDict.keys())
     all_balances = []
@@ -405,12 +417,14 @@ def get_broadcasted_transaction(operationId):
         "timestamp": operation["timestamp"],
         "amount": str(operation["amount_value"]),
         "fee": str(operation["fee_value"]),
-        "hash": operation["chain_identifier"],
-        "block": operation["block_num"]
+        "hash": operation["chain_identifier"]
     }
     if r_op["state"] == "failed":
         r_op["error"] = "An error occured while broadcasting the transaction"
         r_op["errorCode"] = operation["message"]
+
+    if r_op["state"] == "completed":
+        r_op["block"] = operation["block_num"]
 
     return r_op
 
