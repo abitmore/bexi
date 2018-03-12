@@ -46,11 +46,11 @@ def get_all_assets(take, continuation=None):
     if type(take) != int and type(take) != str:
         raise ValueError()
 
+    if type(continuation) != int and type(continuation) != str:
+        raise ValueError()
+
     take = int(take)
-    try:
-        start = int(continuation)
-    except TypeError:
-        start = 0
+    start = int(continuation)
     end = start + take
 
     all_assets_config = Config.get_bitshares_config()["assets"]
@@ -128,12 +128,12 @@ def get_balances(take, continuation):
     if type(take) != int and type(take) != str:
         raise ValueError()
 
+    if type(continuation) != int and type(continuation) != str:
+        raise ValueError()
+
     take = int(take)
-    try:
-        start = int(continuation)
-    except TypeError:
-        start = 0
-        end = start + take
+    start = int(continuation)
+    end = start + take
 
     balancesDict = _get_os().get_balances()
 
@@ -160,6 +160,10 @@ def get_balances(take, continuation):
 
 
 def get_address_history_from(address, take, after_hash):
+    if type(take) != int and type(take) != str:
+        raise ValueError()
+    take = int(take)
+
     all_operations = []
 
     address = split_unique_address(address)
@@ -191,6 +195,10 @@ def get_address_history_from(address, take, after_hash):
 
 
 def get_address_history_to(address, take, after_hash):
+    if type(take) != int and type(take) != str:
+        raise ValueError()
+    take = int(take)
+
     all_operations = []
 
     address = split_unique_address(address)
@@ -261,6 +269,12 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         # Build the transaction, obtain fee to be paid
         tx.constructTx()
         return tx.json()
+
+    if not validate_address(fromAddress):
+        raise AccountDoesNotExistsException()
+
+    if not validate_address(toAddress):
+        raise AccountDoesNotExistsException()
 
     # Decode addresses
     from_address = split_unique_address(fromAddress)

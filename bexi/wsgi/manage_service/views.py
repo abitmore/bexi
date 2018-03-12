@@ -14,6 +14,8 @@ from ...operation_storage.interface import AddressAlreadyTrackedException,\
 from .implementations import AssetNotFoundException, NotEnoughBalanceException,\
     AmountTooSmallException, TransactionExpiredException
 from bitsharesapi.exceptions import UnhandledRPCError
+from bitshares.exceptions import AccountDoesNotExistsException
+from json.decoder import JSONDecodeError
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -57,9 +59,12 @@ def get_all_assets():
     """
     [GET] /api/assets?take=integer&[continuation=string]
     """
-    return jsonify(
-        implementations.get_all_assets(_get("take"), _get("continuation"))
-    )
+    try:
+        return jsonify(
+            implementations.get_all_assets(_get("take"), _get("continuation"))
+        )
+    except ValueError:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/assets/<assetId>")
@@ -112,6 +117,8 @@ def observe_address(address):
     except AddressAlreadyTrackedException:
         # controlled abort, no logging
         abort(409)
+    except AccountDoesNotExistsException:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/balances/<address>/observation", methods=["DELETE"])
@@ -131,6 +138,8 @@ def unobserve_address(address):
     except AddressNotTrackedException:
         # controlled abort, no logging
         return jsonify(data=[]), 204
+    except AccountDoesNotExistsException:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/balances", methods=["GET"])
@@ -172,6 +181,8 @@ def build_transaction():
         _abort(400, "notEnoughBalance")
     except AssetNotFoundException:
         _abort(400, "assetNotFound")
+    except AccountDoesNotExistsException:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast", methods=["POST"])
@@ -195,6 +206,8 @@ def broadcast_transaction():
         abort(409)
     except TransactionExpiredException:
         _abort(400, "transactionExpired")
+    except JSONDecodeError:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast/single/<operationId>", methods=["GET"])
@@ -211,20 +224,27 @@ def get_broadcasted_transaction(operationId):
         )
     except OperationNotFoundException:
         # controlled abort, no logging
-        abort(204)
+        return jsonify(data=[]), 204
 
 
+@blueprint_manage_service.route("/api/transactions/broadcast", methods=["DELETE"])
 @blueprint_manage_service.route("/api/transactions/broadcast/<operationId>", methods=["DELETE"])
-def delete_broadcasted_transaction(operationId):
+def delete_broadcasted_transaction(operationId=None):
     """
     [DELETE] /api/transactions/broadcast/{operationId}
 
     :raises 204 No content - specified transaction not found
 
     """
-    return jsonify(
-        implementations.delete_broadcasted_transaction(operationId)
-    )
+    try:
+        if not operationId:
+            abort(500)
+        return jsonify(
+            implementations.delete_broadcasted_transaction(operationId)
+        )
+    except OperationNotFoundException:
+        # controlled abort, no logging
+        return jsonify(data=[]), 204
 
 
 @blueprint_manage_service.route("/api/transactions/history/from/<address>/observation", methods=["POST", "DELETE"])
@@ -238,7 +258,6 @@ def observe_address_history_from(address):  # @UnusedVariable
 
     """
     # nothing to do, history is always available
-    return ""
 
 
 @blueprint_manage_service.route("/api/transactions/history/to/<address>/observation", methods=["POST", "DELETE"])
@@ -252,7 +271,6 @@ def observe_address_history_to(address):  # @UnusedVariable
 
     """
     # nothing to do, history is always available
-    return ""
 
 
 @blueprint_manage_service.route("/api/transactions/history/from/<address>", methods=["GET"])
@@ -265,7 +283,7 @@ def get_address_history_from(address):
 
     """
     return jsonify(
-        implementations.get_address_history_from(address, _get("take", 1), _get("afterHash"))
+        implementations.get_address_history_from(address, _get("take"), _get("afterHash"))
     )
 
 
@@ -279,5 +297,5 @@ def get_address_history_to(address):
 
     """
     return jsonify(
-        implementations.get_address_history_to(address, _get("take", 1), _get("afterHash"))
+        implementations.get_address_history_to(address, _get("take"), _get("afterHash"))
     )

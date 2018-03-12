@@ -4,10 +4,11 @@
 """
 
 from flask import Blueprint, request
-from flask import jsonify
+from flask import jsonify, abort
 
 from . import implementations
 import json
+from json.decoder import JSONDecodeError
 
 
 blueprint_sign_service = Blueprint("Blockchain.SignService", __name__)
@@ -38,6 +39,9 @@ def sign():
     """
     [POST] /api/sign
     """
-    return jsonify(
-        implementations.sign(_body("transactionContext"), _body("privateKeys"))
-    )
+    try:
+        return jsonify(
+            implementations.sign(_body("transactionContext"), _body("privateKeys"))
+        )
+    except JSONDecodeError:
+        abort(400)
