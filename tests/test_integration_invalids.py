@@ -18,10 +18,13 @@ class TestIntegration(AFlaskTest):
         # allow broadcasting in this test!
         Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = False
 
-    def invalidate(self, url, code, response_json=None, method=None):
+    def invalidate(self, url, code, response_json=None, method=None, body=None):
         if method is None:
             method = self.client.get
-        response = method(url)
+        if body:
+            response = method(url, data=body)
+        else:
+            response = method(url)
         self.assertEqual(response.status_code, code)
         if response_json is not None:
             assert response.json == response_json
@@ -52,24 +55,37 @@ class TestIntegration(AFlaskTest):
         assert response.json == {'continuation': None, 'items': [{'accuracy': 4, 'address': 'None', 'assetId': '1.3.120', 'name': 'EUR'}]}
 
         self.invalidate(url_for('Blockchain.Api.get_all_assets', take="!@*()"),
-                        500)
+                        400)
 
         self.invalidate(url_for('Blockchain.Api.get_all_assets', take="35.23"),
-                        500)
+                        400)
 
     def test_observe_address(self):
         self.invalidate(url_for('Blockchain.Api.observe_address', address="35.23"),
-                        500,
+                        400,
                         method=self.client.post)
 
     def test_unobserve_address(self):
         self.invalidate(url_for('Blockchain.Api.unobserve_address', address="35.23"),
-                        204,
+                        400,
                         method=self.client.delete)
 
     def test_get_balances(self):
         self.invalidate(url_for('Blockchain.Api.get_balances', take="!@*()"),
-                        500)
+                        400)
 
         self.invalidate(url_for('Blockchain.Api.get_balances', take="35.23"),
-                        500)
+                        400)
+
+    def test_build_transaction(self):
+        self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                        400,
+                        method=self.client.post)
+
+    def test_broadcast_transaction(self):
+        self.invalidate(url_for('Blockchain.Api.broadcast_transaction'),
+                        400,
+                        method=self.client.post,
+                        body={"operationId": "adfd63e4-c362-4d38-b90e-cd0e0aec3762", "signedTransaction": "9bd781d436694c57b77e31274f764d60"})
+
+

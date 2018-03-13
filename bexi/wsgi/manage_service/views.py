@@ -27,12 +27,38 @@ def _get(parameter_name, default_value=None):
     return request.args.get(parameter_name, default_value)
 
 
+def _get_take():
+    take = request.args.get("take", None)
+    if not take:
+        abort(400)
+    if type(take) != int and type(take) != str:
+        abort(400)
+    try:
+        return int(take)
+    except ValueError:
+        abort(400)
+
+
+def _get_continuation():
+    # continuation is optional
+    continuation = request.args.get("continuation", None)
+    if continuation:
+        if type(continuation) != int and type(continuation) != str:
+            abort(400)
+        return int(continuation)
+    else:
+        return 0
+
+
 def _body(parameter_name, default_value=None):
-    lookup = request.get_json()
-    if not lookup:
-        if type(request.data) == bytes:
-            lookup = json.loads(request.data)
-    return lookup.get(parameter_name, default_value)
+    try:
+        lookup = request.get_json()
+        if not lookup:
+            if type(request.data) == bytes:
+                lookup = json.loads(request.data)
+        return lookup.get(parameter_name, default_value)
+    except JSONDecodeError:
+        abort(400)
 
 
 def _abort(http_status_code, error_code=None):
@@ -61,7 +87,7 @@ def get_all_assets():
     """
     try:
         return jsonify(
-            implementations.get_all_assets(_get("take"), _get("continuation"))
+            implementations.get_all_assets(_get_take(), _get_continuation())
         )
     except ValueError:
         abort(400)
@@ -148,7 +174,7 @@ def get_balances():
     [GET] /api/balances?take=integer&[continuation=string]
     """
     return jsonify(
-        implementations.get_balances(_get("take", 1), _get("continuation"))
+        implementations.get_balances(_get_take(), _get_continuation())
     )
 
 
@@ -257,7 +283,10 @@ def observe_address_history_from(address):  # @UnusedVariable
     :raises 409 Conflict: transactions from the address are already observed.
 
     """
-    # nothing to do, history is always available
+    try:
+        implementations.is_valid_address(address)
+    except AccountDoesNotExistsException:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/history/to/<address>/observation", methods=["POST", "DELETE"])
@@ -270,7 +299,10 @@ def observe_address_history_to(address):  # @UnusedVariable
     :raises 409 Conflict: transactions from the address are already observed.
 
     """
-    # nothing to do, history is always available
+    try:
+        implementations.is_valid_address(address)
+    except AccountDoesNotExistsException:
+        abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/history/from/<address>", methods=["GET"])
@@ -283,7 +315,7 @@ def get_address_history_from(address):
 
     """
     return jsonify(
-        implementations.get_address_history_from(address, _get("take"), _get("afterHash"))
+        implementations.get_address_history_from(address, _get_take(), _get("afterHash"))
     )
 
 
@@ -297,5 +329,5 @@ def get_address_history_to(address):
 
     """
     return jsonify(
-        implementations.get_address_history_to(address, _get("take"), _get("afterHash"))
+        implementations.get_address_history_to(address, _get_take(), _get("afterHash"))
     )

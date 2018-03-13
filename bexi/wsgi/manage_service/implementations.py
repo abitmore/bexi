@@ -42,15 +42,9 @@ def _get_os(storage=None):
     return operation_storage
 
 
-def get_all_assets(take, continuation=None):
-    if type(take) != int and type(take) != str:
-        raise ValueError()
-
-    if type(continuation) != int and type(continuation) != str:
-        raise ValueError()
-
-    take = int(take)
-    start = int(continuation)
+def get_all_assets(take, continuation):
+    take = take
+    start = continuation
     end = start + take
 
     all_assets_config = Config.get_bitshares_config()["assets"]
@@ -96,43 +90,40 @@ def get_asset(assetId):
         raise AssetNotFoundException()
 
 
+def validate_address(address):
+    return {"isValid": is_valid_address(address)}
+
+
 @requires_blockchain
-def validate_address(address, bitshares_instance=None):
+def is_valid_address(address, bitshares_instance=None):
     try:
         split = split_unique_address(address)
         if not split.get("customer_id"):
-            valid = False
+            return False
         else:
             Account(split["account_id"], bitshares_instance=bitshares_instance)
-            valid = True
+            return True
     except Exception:
-        valid = False
-    return {"isValid": valid}
+        return False
 
 
 def observe_address(address):
-    if validate_address(address):
+    if is_valid_address(address):
         _get_os().track_balance(address)
     else:
         raise AccountDoesNotExistsException()
 
 
 def unobserve_address(address):
-    if validate_address(address):
+    if is_valid_address(address):
         _get_os().untrack_balance(address)
     else:
         raise AccountDoesNotExistsException()
 
 
 def get_balances(take, continuation):
-    if type(take) != int and type(take) != str:
-        raise ValueError()
-
-    if type(continuation) != int and type(continuation) != str:
-        raise ValueError()
-
-    take = int(take)
-    start = int(continuation)
+    take = take
+    start = continuation
     end = start + take
 
     balancesDict = _get_os().get_balances()
@@ -160,8 +151,6 @@ def get_balances(take, continuation):
 
 
 def get_address_history_from(address, take, after_hash):
-    if type(take) != int and type(take) != str:
-        raise ValueError()
     take = int(take)
 
     all_operations = []
@@ -195,8 +184,6 @@ def get_address_history_from(address, take, after_hash):
 
 
 def get_address_history_to(address, take, after_hash):
-    if type(take) != int and type(take) != str:
-        raise ValueError()
     take = int(take)
 
     all_operations = []
@@ -270,10 +257,10 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         tx.constructTx()
         return tx.json()
 
-    if not validate_address(fromAddress):
+    if not is_valid_address(fromAddress):
         raise AccountDoesNotExistsException()
 
-    if not validate_address(toAddress):
+    if not is_valid_address(toAddress):
         raise AccountDoesNotExistsException()
 
     # Decode addresses
