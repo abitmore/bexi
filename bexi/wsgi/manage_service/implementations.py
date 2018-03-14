@@ -150,7 +150,10 @@ def get_balances(take, continuation):
     }
 
 
-def get_address_history_from(address, take, after_hash):
+def get_address_history_from(address, take, after_hash=None):
+    if not is_valid_address(address):
+        raise AccountDoesNotExistsException()
+
     take = int(take)
 
     all_operations = []
@@ -183,7 +186,10 @@ def get_address_history_from(address, take, after_hash):
     return older[0:max_end]
 
 
-def get_address_history_to(address, take, after_hash):
+def get_address_history_to(address, take, after_hash=None):
+    if not is_valid_address(address):
+        raise AccountDoesNotExistsException()
+
     take = int(take)
 
     all_operations = []

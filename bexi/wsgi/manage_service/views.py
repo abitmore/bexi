@@ -45,7 +45,10 @@ def _get_continuation():
     if continuation:
         if type(continuation) != int and type(continuation) != str:
             abort(400)
-        return int(continuation)
+        try:
+            return int(continuation)
+        except ValueError:
+            abort(400)
     else:
         return 0
 
@@ -285,6 +288,7 @@ def observe_address_history_from(address):  # @UnusedVariable
     """
     try:
         implementations.is_valid_address(address)
+        return jsonify([])
     except AccountDoesNotExistsException:
         abort(400)
 
@@ -301,6 +305,7 @@ def observe_address_history_to(address):  # @UnusedVariable
     """
     try:
         implementations.is_valid_address(address)
+        return jsonify([])
     except AccountDoesNotExistsException:
         abort(400)
 
