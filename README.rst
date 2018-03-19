@@ -1,6 +1,8 @@
 Short ReadMe
 ============
 
+Please find the full documentation at https://blockchainbv.github.io/bexi/
+
 Bexi is written in python and enables the integration of BitShares into an external exchange. The basic idea is that
 the external exchange will have one BitShares account to consolidate the funds that it holds for  
 the customers. Deposits and withdrawals into and from said account is tracked and the customer balance
