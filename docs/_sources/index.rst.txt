@@ -16,7 +16,7 @@ solution. In case of BitShares, it comes with decentralized trading of
 assets as well as customized on-chain smart contracts.
 
 About this Library
-------------------
+------------------------
 
 The purpose of *bexi* is to facilitate the integration of BitShares assets
 into another exchange. It contains
@@ -24,6 +24,14 @@ into another exchange. It contains
 * a BitShares block monitor that listens to relevant transfers and stores them internally
 * a BitShares transaction signing service that can be operated offline
 * a manage service for basic configuration, customer balance handling and building and broadcasting BitShares transactions  
+
+For a more detailed introduction to use cases of Bexi and the utilized key features of 
+BitShares from the external exchange's point of view, please visit
+
+.. toctree::
+   :maxdepth: 1
+
+   integration
 
 This library was created for the integration of BitShares into the Lykke exchange
 and is, thanks to Lykke, available freely as open source.

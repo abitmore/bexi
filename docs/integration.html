@@ -1,0 +1,282 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Use cases of Bexi and introduction to BitShares’s key features &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Short ReadMe" href="readme.html" />
+    <link rel="prev" title="Welcome to BEXI - BitShares Exchange Integration’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="use-cases-of-bexi-and-introduction-to-bitshares-s-key-features">
+<h1><a class="toc-backref" href="#id5">Use cases of Bexi and introduction to BitShares’s key features</a><a class="headerlink" href="#use-cases-of-bexi-and-introduction-to-bitshares-s-key-features" title="Permalink to this headline">¶</a></h1>
+<p>This documented gives an introduction behind the possibilities to implement integration of any BitShares asset into an external exchange. For that purpose we introduce the key functionalities of BitShares that are being utilized and describe two different ways to implement withdrawals and deposits.</p>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#use-cases-of-bexi-and-introduction-to-bitshares-s-key-features" id="id5">Use cases of Bexi and introduction to BitShares’s key features</a><ul>
+<li><a class="reference internal" href="#named-accounts-with-authorities" id="id6">Named Accounts with Authorities</a></li>
+<li><a class="reference internal" href="#transfer" id="id7">Transfer</a></li>
+<li><a class="reference internal" href="#use-cases-for-deposit-withdrawal" id="id8">Use cases for deposit/withdrawal</a><ul>
+<li><a class="reference internal" href="#memo-tracking" id="id9">Memo tracking</a><ul>
+<li><a class="reference internal" href="#triggering-a-deposit" id="id10">Triggering a deposit</a></li>
+<li><a class="reference internal" href="#triggering-a-withdrawal" id="id11">Triggering a withdrawal</a></li>
+<li><a class="reference internal" href="#recognizing-deposits" id="id12">Recognizing deposits</a></li>
+<li><a class="reference internal" href="#advantages" id="id13">Advantages</a></li>
+<li><a class="reference internal" href="#disadvantages" id="id14">Disadvantages</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#account-linking" id="id15">Account linking</a><ul>
+<li><a class="reference internal" href="#id1" id="id16">Triggering a deposit</a></li>
+<li><a class="reference internal" href="#id2" id="id17">Triggering a withdrawal</a></li>
+<li><a class="reference internal" href="#id3" id="id18">Recognizing deposits</a></li>
+<li><a class="reference internal" href="#id4" id="id19">Advantages</a></li>
+<li><a class="reference internal" href="#disadvantage" id="id20">Disadvantage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#apis" id="id21">APIs</a></li>
+<li><a class="reference internal" href="#monitoring-the-blockchain" id="id22">Monitoring the Blockchain</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="named-accounts-with-authorities">
+<h2><a class="toc-backref" href="#id6">Named Accounts with Authorities</a><a class="headerlink" href="#named-accounts-with-authorities" title="Permalink to this headline">¶</a></h2>
+<p>Every BitShares account is assigned a globally unique name which is selected by the user  when registering the account.. An account name is an alias to a set of dynamic account authorities.
+An authority contains a list of weighted public keys (default is only one key with weight 1) that allows the user to execute a certain functionality on the blockchain via cryptographically signed transactions.
+Those authorities are</p>
+<blockquote>
+<div><ul class="simple">
+<li>Active authority
+Operating permission that allows e.g. to buy/sell and transfer assets and vote, and that allows to change the keys of active and memo permission</li>
+<li>Owner authority
+Everything that active permission allows and additionally change of owner key</li>
+</ul>
+</div></blockquote>
+<p>Additionally, an account has a memo key that has no authority whatsoever and is merely used for key exchange when encrypting and decrypting messages, e.g. the memo message of transfers.</p>
+<p>The benefit of a named account with authorities is obvious. First of all, named accounts are easily remembered and communicated (same as IP addresses and DNS), and thus human-friendly. Second,
+dynamic account authorities provide more security and allow for management activities in the corporate environment via hierarchical multi-sig accounts instead of only flat, 1-level multi-sig schemes know
+from Blockchain technologies.</p>
+</div>
+<div class="section" id="transfer">
+<h2><a class="toc-backref" href="#id7">Transfer</a><a class="headerlink" href="#transfer" title="Permalink to this headline">¶</a></h2>
+<p>A transfer of an asset between two accounts is the main feature to realize deposit and withdrawals of an external exchange. Therefore, it will be explained in more detail below. A transfer essentially contains:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Sender account</li>
+<li>Receiver account</li>
+<li>Asset and amount to be transferred</li>
+<li>Fee to be paid to the blockchain</li>
+<li>Optional: Encrypted memo message that can only be read by sender or receiver</li>
+</ul>
+</div></blockquote>
+<p>A transfer allows separation of concerns in terms of security:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Execution of a transfer requires the active authority</li>
+<li>Reading (and decrypting) the memo message requires only the memo private key of the receiver or sender, e.g. when monitoring for deposits</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="use-cases-for-deposit-withdrawal">
+<h2><a class="toc-backref" href="#id8">Use cases for deposit/withdrawal</a><a class="headerlink" href="#use-cases-for-deposit-withdrawal" title="Permalink to this headline">¶</a></h2>
+<p>In every case, the external exchange is required to have full control of at least one  BitShares account that will be the turning point for deposits and withdrawals. Certainly, separation for different purposes is possible (cold wallet, hot wallet, deposit only, withdrawal only …).</p>
+<p>There are methods on how to track deposits and withdrawals: Memo-based tracking and Account linking, both are briefly described below.</p>
+<div class="section" id="memo-tracking">
+<h3><a class="toc-backref" href="#id9">Memo tracking</a><a class="headerlink" href="#memo-tracking" title="Permalink to this headline">¶</a></h3>
+<p>In this use case, the identification of the user is done via identifiable information within the memo message. This is the most flexible solution but it requires a more sophisticated tracking approach for deposits.</p>
+<div class="section" id="triggering-a-deposit">
+<h4><a class="toc-backref" href="#id10">Triggering a deposit</a><a class="headerlink" href="#triggering-a-deposit" title="Permalink to this headline">¶</a></h4>
+<p>User initiates a deposit on the external exchange and gets a specific memo message and target BitShares account. User then transfers the desired asset to the target BitShares account with a specific memo message. Said memo message allows unique mapping of this transfer to the user.</p>
+</div>
+<div class="section" id="triggering-a-withdrawal">
+<h4><a class="toc-backref" href="#id11">Triggering a withdrawal</a><a class="headerlink" href="#triggering-a-withdrawal" title="Permalink to this headline">¶</a></h4>
+<p>User initiates a withdrawal by providing the asset name, amount and target BitShares account name. The external exchange executes the transfer to this target BitShares account.</p>
+</div>
+<div class="section" id="recognizing-deposits">
+<h4><a class="toc-backref" href="#id12">Recognizing deposits</a><a class="headerlink" href="#recognizing-deposits" title="Permalink to this headline">¶</a></h4>
+<p>The external exchange needs to process all incoming transfers and decides with the memo message (after decrypting with the exchange’s memo private key) which user to credit.</p>
+</div>
+<div class="section" id="advantages">
+<h4><a class="toc-backref" href="#id13">Advantages</a><a class="headerlink" href="#advantages" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><ul class="simple">
+<li>User can use arbitrary many accounts for deposit and withdrawal</li>
+<li>User is forced to check the account on every withdrawal, reduces risk when a user’s BitShares account gets compromised</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="disadvantages">
+<h4><a class="toc-backref" href="#id14">Disadvantages</a><a class="headerlink" href="#disadvantages" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><ul class="simple">
+<li>Monitoring deposits requires knowledge of memo private key</li>
+<li>User bears risk of mistyping memo message for deposits</li>
+<li>User bears risk of mistyping BitShares account for withdrawals</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="account-linking">
+<h3><a class="toc-backref" href="#id15">Account linking</a><a class="headerlink" href="#account-linking" title="Permalink to this headline">¶</a></h3>
+<p>In this use case, the user links his/her BitShares account name to the external exchange during registration. Ownership of the account must be validated. This can be done in two ways:</p>
+<blockquote>
+<div><ul class="simple">
+<li>A BitShares signed message that proves that control over the memo key. Such a message can be created in the reference wallet</li>
+<li>Transfer a dust amount of a specified asset with an encrypted memo message, which proves control over the active permission and the memo key</li>
+</ul>
+</div></blockquote>
+<p>For example, such a message could be
+Signing up at “someexchange.com” with username “sschiessl-suffix”</p>
+<p>The uniqueness of such an external username to the BitShares account name must be ensured by the external exchange.</p>
+<div class="section" id="id1">
+<h4><a class="toc-backref" href="#id16">Triggering a deposit</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>User does not need to initiate a deposit., Every transfer to the external exchange’s BitShares account from the linked BitShares account is credited to the user. Optional a specific memo message can be enclosed.</p>
+</div>
+<div class="section" id="id2">
+<h4><a class="toc-backref" href="#id17">Triggering a withdrawal</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<p>User initiates a withdrawal by providing the asset name and amount to be withdrawn. Optional a memo message can be given by the user / defined by the external exchange. The external exchange then executes the transfer to the user’s linked BitShares account.</p>
+</div>
+<div class="section" id="id3">
+<h4><a class="toc-backref" href="#id18">Recognizing deposits</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<p>All transfers from the user’s linked BitShares account to the external exchange’s BitShares account are credited to the user.</p>
+</div>
+<div class="section" id="id4">
+<h4><a class="toc-backref" href="#id19">Advantages</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><ul class="simple">
+<li>Deposits and withdrawals can easily be mapped to the user, the only risk of mistyping is when registering</li>
+<li>Monitoring deposits does not require knowledge of any keys</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="disadvantage">
+<h4><a class="toc-backref" href="#id20">Disadvantage</a><a class="headerlink" href="#disadvantage" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><ul class="simple">
+<li>User can only perform deposits and withdrawals using the predefined BitShares account</li>
+<li>Proof of ownership of the linked BitShares account must be ensured, e.g. signed message can’t be older than 10 minutes, must contain user specific text, etc.</li>
+<li>User can forget which account is linked, lose control over said account or simply transfer ownership</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>Independent of the chosen method, an exchange needs to consider and implement action points for the following failure scenarios:</dt>
+<dd><ul class="first last simple">
+<li>A deposit cannot be assigned to a user in the exchanges’ internal database (either by a missing or use of an unknown memo, or by sending from an unknown account)</li>
+</ul>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="section" id="apis">
+<h2><a class="toc-backref" href="#id21">APIs</a><a class="headerlink" href="#apis" title="Permalink to this headline">¶</a></h2>
+<p>As with other blockchain systems, there is no centralized service that lets you access private API calls after successful authentication. Instead, a wallet API offers private functionalities (such as transfers, etc) via locally signed transactions.
+All other public readable information can be queried via a public blockchain API. Hence, APIs are separated into two general categories, namely</p>
+<blockquote>
+<div><ul class="simple">
+<li>Blockchain API which is used to query blockchain data (account, assets, trading history, etc.) and is offered by the witness_node application.</li>
+<li><dl class="first docutils">
+<dt>Wallet API which has your private keys loaded and is required when interacting with the blockchain with new transactions. The purpose of a wallet is to safely store the private keys to an account and sign transactions according to the user’s inputs.</dt>
+<dd>Developers have the choice between hooking up with the cli_wallet API (C++), use the wallet functionality of pybitshares (python) or bitsharesjs (Javascript).</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>As an exchange, it is highly recommend to run and maintain a local blockchain (API) node for a trusted setup.</p>
+</div>
+<div class="section" id="monitoring-the-blockchain">
+<h2><a class="toc-backref" href="#id22">Monitoring the Blockchain</a><a class="headerlink" href="#monitoring-the-blockchain" title="Permalink to this headline">¶</a></h2>
+<p>When monitoring a Blockchain, the most important question to answer is which block is considered final. In case of Bitcoin, most businesses consider 6 confirmations (e.g. a block that is buried in the blockchain by at least 5 more blocks) final.
+In the case of Graphene, we have a very specific definition of finality. Ultimately, the so called irreversible block and all blocks that happened before that are considered final. Fortunately, the irreversible block can be obtained from the API directly
+as it is well known by the software. There even is a so called delayed node that connects to a regular node and is only aware of blocks that are final.</p>
+<dl class="docutils">
+<dt>Two options exist for monitoring the BitShares Blockchain for new events that affect the exchange’s business (e.g. deposits):</dt>
+<dd><ul class="first last simple">
+<li>Process each block individually</li>
+<li>Register for notifications on the backend API</li>
+</ul>
+</dd>
+</dl>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to BEXI - BitShares Exchange Integration’s documentation!</a></li>
+      <li>Next: <a href="readme.html" title="next chapter">Short ReadMe</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/integration.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
