@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Temporary files
+dump
+tests/dump
+
 # Distribution / packaging
 .Python
 env/
@@ -50,8 +54,10 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/_build/
-docs/html
+docs_build/_build/
+docs_build/bexi
+docs_build/bexi*
+docs_build/modules.rst
 
 # PyBuilder
 target/
@@ -63,5 +69,7 @@ target/
 env
 __pycache__
 
+# Eclipse configuration files
 .pydevproject
 .project
+.settings
