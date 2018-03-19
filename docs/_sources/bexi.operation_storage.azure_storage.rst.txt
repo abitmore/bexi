@@ -1,0 +1,7 @@
+bexi\.operation\_storage\.azure\_storage module
+===============================================
+
+.. automodule:: bexi.operation_storage.azure_storage
+    :members:
+    :undoc-members:
+    :show-inheritance:

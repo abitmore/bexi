@@ -1,0 +1,17 @@
+bexi\.wsgi\.common package
+==========================
+
+Submodules
+----------
+
+.. toctree::
+
+   bexi.wsgi.common.views
+
+Module contents
+---------------
+
+.. automodule:: bexi.wsgi.common
+    :members:
+    :undoc-members:
+    :show-inheritance:

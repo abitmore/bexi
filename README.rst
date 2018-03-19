@@ -10,7 +10,7 @@ Nevertheless, this module is not meant to be an accounting platform for the exte
 the technical realization of the integration.
 
 Supported exchanges
--------------------
+-------------------------------
 
 This software was motivated and constructed for the implementation of the Lykke exchange. Thanks to Lykke
 it is available as open source (for licensing information please see LICENSE.rst file).
@@ -23,12 +23,12 @@ This library was implemented according to
 
 
 Who do I talk to?
------------------
+-------------------------------
 
 info@blockchainprojectsbv.com
 
 Installation
-----------
+-------------------------------
 Install environment
 	
 .. code-block:: bash
@@ -58,7 +58,7 @@ Build documentation:
 	$ make docs
 
 Quick Guide
-----------
+-------------------------------
 Fill in the operation storage details, 
 as well as the BitShares exchange account and connection
 details in the config yaml files.

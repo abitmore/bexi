@@ -1,0 +1,7 @@
+bexi\.wsgi\.manage\_service\.views module
+=========================================
+
+.. automodule:: bexi.wsgi.manage_service.views
+    :members:
+    :undoc-members:
+    :show-inheritance:

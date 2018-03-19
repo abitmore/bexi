@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.operation_storage.operation_formatter &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bexi.operation_storage.operation_formatter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">addresses</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">jsonschema</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">import</span> <span class="nn">hashlib</span>
+
+
+<div class="viewcode-block" id="decode_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.operation_formatter.html#bexi.operation_storage.operation_formatter.decode_operation">[docs]</a><span class="k">def</span> <span class="nf">decode_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The given operation comes directly from the blockchain and is here reformatted.</span>
+<span class="sd">        This is done to better suit the needs of our processing and also due to the fact</span>
+<span class="sd">        that the resulting operations dict can&#39;t have nested dicts.</span>
+
+<span class="sd">        :param operation: operation as given by blockchain monitor</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">memo</span> <span class="o">=</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;memo&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+
+    <span class="n">new_operation</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;block_num&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_num&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;memo&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">memo</span><span class="p">),</span>
+        <span class="s2">&quot;from&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;from&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;to&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;amount_value&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;amount&quot;</span><span class="p">][</span><span class="s2">&quot;amount&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;amount_asset_id&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;amount&quot;</span><span class="p">][</span><span class="s2">&quot;asset_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;expiration&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+            <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;expiration&quot;</span><span class="p">],</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">(),</span>
+        <span class="s2">&quot;fee_value&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;fee&quot;</span><span class="p">][</span><span class="s2">&quot;amount&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;fee_asset_id&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;op&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;fee&quot;</span><span class="p">][</span><span class="s2">&quot;asset_id&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">memo</span> <span class="o">=</span> <span class="n">addresses</span><span class="o">.</span><span class="n">split_memo</span><span class="p">(</span><span class="n">operation</span><span class="p">[</span><span class="s2">&quot;decoded_memo&quot;</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">memo</span> <span class="o">=</span> <span class="n">addresses</span><span class="o">.</span><span class="n">split_memo</span><span class="p">(</span><span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">memo</span> <span class="o">=</span> <span class="n">addresses</span><span class="o">.</span><span class="n">split_memo</span><span class="p">(</span><span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">):</span>
+        <span class="n">new_operation</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
+
+    <span class="n">chain_identifier</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transaction_id&quot;</span><span class="p">)</span>
+    <span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;op_in_tx&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">memo</span><span class="p">[</span><span class="s2">&quot;incident_id&quot;</span><span class="p">]:</span>
+        <span class="n">memo</span><span class="p">[</span><span class="s2">&quot;incident_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chain_identifier</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;chain_identifier&quot;</span><span class="p">:</span> <span class="n">chain_identifier</span><span class="p">,</span>
+        <span class="s2">&quot;customer_id&quot;</span><span class="p">:</span> <span class="n">memo</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;incident_id&quot;</span><span class="p">:</span> <span class="n">memo</span><span class="p">[</span><span class="s2">&quot;incident_id&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="n">new_operation</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_operation</span></div>
+
+
+<span class="n">OPERATION_SCHEMA</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="validate_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.operation_formatter.html#bexi.operation_storage.operation_formatter.validate_operation">[docs]</a><span class="k">def</span> <span class="nf">validate_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates the given reformatted operation against the json schema given by</span>
+<span class="sd">        :file:`operation_schema.json`</span>
+
+<span class="sd">        :param operation: operation formatted as returned by :func:`decode_operation`</span>
+<span class="sd">        :type operation:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">OPERATION_SCHEMA</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">OPERATION_SCHEMA</span><span class="p">:</span>
+        <span class="n">schema_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+            <span class="s2">&quot;operation_schema.json&quot;</span>
+        <span class="p">)</span>
+        <span class="n">OPERATION_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">schema_file</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="c1"># to validate date format against zulu time, rfc import is needed</span>
+    <span class="n">jsonschema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span>
+                        <span class="n">OPERATION_SCHEMA</span><span class="p">,</span>
+                        <span class="n">format_checker</span><span class="o">=</span><span class="n">jsonschema</span><span class="o">.</span><span class="n">FormatChecker</span><span class="p">())</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../bexi.html">bexi</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

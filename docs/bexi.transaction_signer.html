@@ -1,0 +1,154 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.transaction_signer package &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bexi.wsgi package" href="bexi.wsgi.html" />
+    <link rel="prev" title="bexi.operation_storage.operation_formatter module" href="bexi.operation_storage.operation_formatter.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bexi-transaction-signer-package">
+<h1>bexi.transaction_signer package<a class="headerlink" href="#bexi-transaction-signer-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-bexi.transaction_signer">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bexi.transaction_signer" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="bexi.transaction_signer.sign_transaction">
+<code class="descclassname">bexi.transaction_signer.</code><code class="descname">sign_transaction</code><span class="sig-paren">(</span><em>transaction</em>, <em>wifs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/transaction_signer.html#sign_transaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.transaction_signer.sign_transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>This methed signs a raw/unsigned transaction with the provided private
+keys.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The method does not guarantee that the blockchain will accept
+the signed transaction. This may happen in multiple cases, such as
+a) signed with irrelevant or redundant private keys, b)
+insufficient permissions to perform what is requested in the
+operations.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method does <strong>not</strong> have a connection to the blockchain.
+Hence, neither the expiration, nor any of the TaPOS parameters
+(<code class="docutils literal"><span class="pre">ref_block_num</span></code>, nor <code class="docutils literal"><span class="pre">ref_block_prefix</span></code>) are obtained here.
+The method needs to be provided with a fully valid (but unsigned
+transaction).</p>
+</div>
+<p>An unsigned transaction takes the following form:</p>
+<p>The operation (here, operation type (0) is a <code class="docutils literal"><span class="pre">transfer</span></code>) is the
+actual action that should take place on the blockchain. The parameters
+around it are required for a valid transaction and need to be obtained
+outside this method.</p>
+<p>For sake of completion, we here describe how the <code class="docutils literal"><span class="pre">ref_block_num</span></code> and
+<code class="docutils literal"><span class="pre">ref_block_prefix</span></code> are obtained from the blockchain
+(<a class="reference external" href="https://github.com/xeroc/python-graphenelib/blob/master/graphenebase/transactions.py#L18-L26">github</a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">dynBCParams</span> <span class="o">=</span> <span class="n">rpc</span><span class="o">.</span><span class="n">get_dynamic_global_properties</span><span class="p">()</span>
+<span class="n">ref_block_num</span> <span class="o">=</span> <span class="n">dynBCParams</span><span class="p">[</span><span class="s2">&quot;head_block_number&quot;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span>
+<span class="n">ref_block_prefix</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">unhexlify</span><span class="p">(</span><span class="n">dynBCParams</span><span class="p">[</span><span class="s2">&quot;head_block_id&quot;</span><span class="p">]),</span> <span class="mi">4</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">The expiration <strong>must not</strong> be more than 1 day in the future!</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>transaction</strong> (<em>dict</em>) – unsigned transaction</li>
+<li><strong>wifs</strong> (<em>list</em>) – list of private keys in wif format</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">signed transaction</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="bexi.html">bexi package</a><ul>
+      <li>Previous: <a href="bexi.operation_storage.operation_formatter.html" title="previous chapter">bexi.operation_storage.operation_formatter module</a></li>
+      <li>Next: <a href="bexi.wsgi.html" title="next chapter">bexi.wsgi package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/bexi.transaction_signer.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

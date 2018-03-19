@@ -1,0 +1,153 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.utils module &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="bexi.factory module" href="bexi.factory.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-bexi.utils">
+<span id="bexi-utils-module"></span><h1>bexi.utils module<a class="headerlink" href="#module-bexi.utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="bexi.utils.date_to_string">
+<code class="descclassname">bexi.utils.</code><code class="descname">date_to_string</code><span class="sig-paren">(</span><em>date_object=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/utils.html#date_to_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.utils.date_to_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a rfc3339 conform string represenation of a date,
+can also be given as str YYYY-mm-dd HH:MM:SS, assuming local
+machine timezone</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>date_object</strong> (<em>date object</em><em> or </em><em>str</em>) – the date to be converted</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.utils.get_exchange_account_id">
+<code class="descclassname">bexi.utils.</code><code class="descname">get_exchange_account_id</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/utils.html#get_exchange_account_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.utils.get_exchange_account_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets the exchange account id that is configured in config.yaml</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.utils.get_exchange_active_key">
+<code class="descclassname">bexi.utils.</code><code class="descname">get_exchange_active_key</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/utils.html#get_exchange_active_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.utils.get_exchange_active_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets the exchange accounts active private key that is configured in config.yaml</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.utils.get_exchange_memo_key">
+<code class="descclassname">bexi.utils.</code><code class="descname">get_exchange_memo_key</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/utils.html#get_exchange_memo_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.utils.get_exchange_memo_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets the exchange accounts active private key that is configured in config.yaml</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.utils.is_exchange_account">
+<code class="descclassname">bexi.utils.</code><code class="descname">is_exchange_account</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/utils.html#is_exchange_account"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.utils.is_exchange_account" title="Permalink to this definition">¶</a></dt>
+<dd><p>checks if the given account id is configured as the exchange account</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>account_id</strong> (<em>str</em>) – format 1.2.XXX</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.utils.string_to_date">
+<code class="descclassname">bexi.utils.</code><code class="descname">string_to_date</code><span class="sig-paren">(</span><em>date_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/utils.html#string_to_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.utils.string_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts the given string to a date object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>date_string</strong> (<em>str</em>) – rfc3339 conform string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="bexi.html">bexi package</a><ul>
+      <li>Previous: <a href="bexi.factory.html" title="previous chapter">bexi.factory module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/bexi.utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,7 @@
+bexi\.addresses module
+======================
+
+.. automodule:: bexi.addresses
+    :members:
+    :undoc-members:
+    :show-inheritance:

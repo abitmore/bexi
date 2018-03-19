@@ -1,0 +1,7 @@
+bexi\.connection module
+=======================
+
+.. automodule:: bexi.connection
+    :members:
+    :undoc-members:
+    :show-inheritance:

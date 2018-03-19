@@ -1,0 +1,111 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.wsgi.sign_service.implementations module &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bexi.wsgi.sign_service.views module" href="bexi.wsgi.sign_service.views.html" />
+    <link rel="prev" title="bexi.wsgi.sign_service package" href="bexi.wsgi.sign_service.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-bexi.wsgi.sign_service.implementations">
+<span id="bexi-wsgi-sign-service-implementations-module"></span><h1>bexi.wsgi.sign_service.implementations module<a class="headerlink" href="#module-bexi.wsgi.sign_service.implementations" title="Permalink to this headline">¶</a></h1>
+<p>This module collects all business logic that is used in the routes of the corresponding blueprint
+in <a class="reference internal" href="bexi.wsgi.common.views.html#module-bexi.wsgi.common.views" title="bexi.wsgi.common.views"><code class="xref py py-mod docutils literal"><span class="pre">views</span></code></a>.</p>
+<dl class="function">
+<dt id="bexi.wsgi.sign_service.implementations.create_address">
+<code class="descclassname">bexi.wsgi.sign_service.implementations.</code><code class="descname">create_address</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/wsgi/sign_service/implementations.html#create_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.wsgi.sign_service.implementations.create_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simply reads the private key from the config and creates a new random customer_id</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.wsgi.sign_service.implementations.sign">
+<code class="descclassname">bexi.wsgi.sign_service.implementations.</code><code class="descname">sign</code><span class="sig-paren">(</span><em>tx</em>, <em>keys</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/wsgi/sign_service/implementations.html#sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.wsgi.sign_service.implementations.sign" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to connect the transaction signer with the API.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="bexi.html">bexi package</a><ul>
+  <li><a href="bexi.wsgi.html">bexi.wsgi package</a><ul>
+  <li><a href="bexi.wsgi.sign_service.html">bexi.wsgi.sign_service package</a><ul>
+      <li>Previous: <a href="bexi.wsgi.sign_service.html" title="previous chapter">bexi.wsgi.sign_service package</a></li>
+      <li>Next: <a href="bexi.wsgi.sign_service.views.html" title="next chapter">bexi.wsgi.sign_service.views module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/bexi.wsgi.sign_service.implementations.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

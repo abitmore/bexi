@@ -1,0 +1,178 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.wsgi.flask_setup &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bexi.wsgi.flask_setup</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">current_app</span>
+<span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">InternalServerError</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">Config</span>
+
+
+<div class="viewcode-block" id="setup_blueprint"><a class="viewcode-back" href="../../../bexi.wsgi.flask_setup.html#bexi.wsgi.flask_setup.setup_blueprint">[docs]</a><span class="k">def</span> <span class="nf">setup_blueprint</span><span class="p">(</span><span class="n">blueprint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configures the given blueprint.</span>
+<span class="sd">     - sets the error handles to unify error response</span>
+
+<span class="sd">    :param blueprint: blueprint to modify</span>
+<span class="sd">    :type blueprint: flask.Blueprint</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">blueprint</span><span class="o">.</span><span class="n">errorhandler</span><span class="p">(</span><span class="ne">Exception</span><span class="p">)(</span><span class="n">handle_exception</span><span class="p">)</span>
+    <span class="c1"># In the case of an internal error after the user function</span>
+    <span class="c1"># (e.g. a view does not return any value)</span>
+    <span class="c1"># flask is looking for a specifically set InternalServerError handler,</span>
+    <span class="c1"># see flask/app.py:handle_exception:1532</span>
+    <span class="n">blueprint</span><span class="o">.</span><span class="n">errorhandler</span><span class="p">(</span><span class="n">InternalServerError</span><span class="p">)(</span><span class="n">handle_exception</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ErrorCodeException"><a class="viewcode-back" href="../../../bexi.wsgi.flask_setup.html#bexi.wsgi.flask_setup.ErrorCodeException">[docs]</a><span class="k">class</span> <span class="nc">ErrorCodeException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This exception is a Exception that can also be inputed with an error_code.</span>
+<span class="sd">        This code will be returned in the error response</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">http_status_code</span><span class="p">,</span> <span class="n">error_code</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_code</span> <span class="o">=</span> <span class="n">error_code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">http_status_code</span> <span class="o">=</span> <span class="n">http_status_code</span></div>
+
+
+<div class="viewcode-block" id="get_error_response"><a class="viewcode-back" href="../../../bexi.wsgi.flask_setup.html#bexi.wsgi.flask_setup.get_error_response">[docs]</a><span class="k">def</span> <span class="nf">get_error_response</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a unified json object as reponse for the failed request.</span>
+<span class="sd">        If the causing exception is a ErrorCodeException, the error_code is added</span>
+<span class="sd">        to the reponse</span>
+
+<span class="sd">        :param Exception ex: exception to be handled</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">error_code</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">ErrorCodeException</span><span class="p">):</span>
+        <span class="n">error_code</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">error_code</span>
+
+    <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wsgi&quot;</span><span class="p">,</span> <span class="s2">&quot;detailed_error&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="n">etype</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="n">ex</span><span class="p">,</span> <span class="n">tb</span><span class="o">=</span><span class="n">ex</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;errorMessage&quot;</span><span class="p">:</span> <span class="n">message</span><span class="p">,</span>
+        <span class="s2">&quot;errorCode&quot;</span><span class="p">:</span> <span class="n">error_code</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="handle_exception"><a class="viewcode-back" href="../../../bexi.wsgi.flask_setup.html#bexi.wsgi.flask_setup.handle_exception">[docs]</a><span class="k">def</span> <span class="nf">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates the reposne for a failed request</span>
+
+<span class="sd">    :param Exception e: exception to be handled</span>
+<span class="sd">    :returns: HTTP response jsonified :func:&#39;get_error_response&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="mi">500</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">):</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">ErrorCodeException</span><span class="p">):</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">http_status_code</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">get_error_response</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="n">code</span>
+    <span class="n">current_app</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resp</span></div>
+
+
+<div class="viewcode-block" id="is_debug_on"><a class="viewcode-back" href="../../../bexi.wsgi.flask_setup.html#bexi.wsgi.flask_setup.is_debug_on">[docs]</a><span class="k">def</span> <span class="nf">is_debug_on</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines whether this flask app runs in debug mode</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">current_app</span><span class="o">.</span><span class="n">debug</span></div>
+
+
+<div class="viewcode-block" id="get_env_info"><a class="viewcode-back" href="../../../bexi.wsgi.flask_setup.html#bexi.wsgi.flask_setup.get_env_info">[docs]</a><span class="k">def</span> <span class="nf">get_env_info</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the environment variable ENV_INFO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># return ENV_INFO environment variable value</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ENV_INFO&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../bexi.html">bexi</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

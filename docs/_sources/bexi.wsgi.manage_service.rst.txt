@@ -1,0 +1,18 @@
+bexi\.wsgi\.manage\_service package
+===================================
+
+Submodules
+----------
+
+.. toctree::
+
+   bexi.wsgi.manage_service.implementations
+   bexi.wsgi.manage_service.views
+
+Module contents
+---------------
+
+.. automodule:: bexi.wsgi.manage_service
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,0 +1,7 @@
+bexi\.operation\_storage\.mongodb\_storage module
+=================================================
+
+.. automodule:: bexi.operation_storage.mongodb_storage
+    :members:
+    :undoc-members:
+    :show-inheritance:

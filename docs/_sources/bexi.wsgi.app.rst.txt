@@ -1,0 +1,7 @@
+bexi\.wsgi\.app module
+======================
+
+.. automodule:: bexi.wsgi.app
+    :members:
+    :undoc-members:
+    :show-inheritance:

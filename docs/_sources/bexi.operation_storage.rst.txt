@@ -1,0 +1,20 @@
+bexi\.operation\_storage package
+================================
+
+Submodules
+----------
+
+.. toctree::
+
+   bexi.operation_storage.azure_storage
+   bexi.operation_storage.interface
+   bexi.operation_storage.mongodb_storage
+   bexi.operation_storage.operation_formatter
+
+Module contents
+---------------
+
+.. automodule:: bexi.operation_storage
+    :members:
+    :undoc-members:
+    :show-inheritance:

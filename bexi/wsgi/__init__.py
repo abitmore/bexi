@@ -1,8 +1,8 @@
 __all__ = [
     "app",
-    "cli",
     "flask_setup",
+    "blockchain_monitor_service",
+    "common",
     "manage_service",
-    "sign_service",
-    "common"
+    "sign_service"
 ]

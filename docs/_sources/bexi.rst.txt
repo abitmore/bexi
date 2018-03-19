@@ -1,0 +1,30 @@
+bexi package
+============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    bexi.blockchain_monitor
+    bexi.operation_storage
+    bexi.transaction_signer
+    bexi.wsgi
+
+Submodules
+----------
+
+.. toctree::
+
+   bexi.addresses
+   bexi.connection
+   bexi.factory
+   bexi.utils
+
+Module contents
+---------------
+
+.. automodule:: bexi
+    :members:
+    :undoc-members:
+    :show-inheritance:

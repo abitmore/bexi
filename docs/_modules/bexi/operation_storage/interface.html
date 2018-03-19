@@ -1,0 +1,450 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.operation_storage.interface &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bexi.operation_storage.interface</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">..operation_storage</span> <span class="k">import</span> <span class="n">operation_formatter</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">date_to_string</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">Config</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<div class="viewcode-block" id="OperationStorageException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.OperationStorageException">[docs]</a><span class="k">class</span> <span class="nc">OperationStorageException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    General purpose exception for the interface.</span>
+<span class="sd">    Any and all exceptions thrown by implementations must be</span>
+<span class="sd">    of this class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="OperationStorageLostException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.OperationStorageLostException">[docs]</a><span class="k">class</span> <span class="nc">OperationStorageLostException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AddressAlreadyTrackedException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.AddressAlreadyTrackedException">[docs]</a><span class="k">class</span> <span class="nc">AddressAlreadyTrackedException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AddressNotTrackedException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.AddressNotTrackedException">[docs]</a><span class="k">class</span> <span class="nc">AddressNotTrackedException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="StatusInvalidException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.StatusInvalidException">[docs]</a><span class="k">class</span> <span class="nc">StatusInvalidException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NoBlockNumException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.NoBlockNumException">[docs]</a><span class="k">class</span> <span class="nc">NoBlockNumException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InvalidOperationException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.InvalidOperationException">[docs]</a><span class="k">class</span> <span class="nc">InvalidOperationException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="OperationNotFoundException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.OperationNotFoundException">[docs]</a><span class="k">class</span> <span class="nc">OperationNotFoundException</span><span class="p">(</span><span class="n">OperationStorageException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DuplicateOperationException"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.DuplicateOperationException">[docs]</a><span class="k">class</span> <span class="nc">DuplicateOperationException</span><span class="p">(</span><span class="n">OperationNotFoundException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="IOperationStorage"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage">[docs]</a><span class="k">class</span> <span class="nc">IOperationStorage</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="IOperationStorage.flag_operation_completed"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.flag_operation_completed">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">flag_operation_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Marks an operation that is in_progress as completed.</span>
+
+<span class="sd">        :param operation: operations struct as defined in :func:`interface.IOperationStorage.insert_operation`.</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">        :raises: StatusInvalidException: if the operation status is not in_progress</span>
+<span class="sd">        :raises: NoBlockNumException: if no block_num was given</span>
+<span class="sd">        :raises: InvalidOperationException: if the operation is not well defined or couldnt be found</span>
+<span class="sd">        :raises: OperationNotFoundException: if the given operation cant be found in the storage</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.flag_operation_failed"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.flag_operation_failed">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">flag_operation_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Marks an operation that is in_progress as failed.</span>
+
+<span class="sd">        :param operation: operations struct adhering to the json schema definitions</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">        :param message: reason of failure</span>
+<span class="sd">        :type message: str</span>
+<span class="sd">        :raises: StatusInvalidException: if the operation status is not in_progress</span>
+<span class="sd">        :raises: OperationNotFoundException: if the given operation cant be found in the storage</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.insert_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.insert_operation">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">insert_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inserts the operation into the storage. Operation status</span>
+<span class="sd">        can be in_progress or completed.</span>
+
+<span class="sd">        :param operation: operations struct adhering to the json schema definitions</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">        :raises: InvalidOperationException: if the operation is not well defined</span>
+<span class="sd">        :raises: DuplicateOperationException: if the operation already exists in the storage</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.insert_or_update_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.insert_or_update_operation">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">insert_or_update_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inserts the operation, or updates it into the storage. Operation status</span>
+<span class="sd">        can be in_progress or completed</span>
+
+<span class="sd">        :param operation: operations struct adhering to the json schema definitions</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">        :raises: InvalidOperationException: if the operation is not well defined</span>
+<span class="sd">        :raises: DuplicateOperationException: if the operation already exists in the storage</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.delete_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.delete_operation">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">delete_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_or_incident_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes an operation from the storage.</span>
+
+<span class="sd">        :param operation_or_incident_id: operations struct adhering to the json schema definitions</span>
+<span class="sd">                                         or the incident_id of the operation</span>
+<span class="sd">        :type operation_or_incident_id: dict or string</span>
+<span class="sd">        :raises: StatusInvalidException: if the operation status is not completed or failed</span>
+<span class="sd">        :raises: OperationNotFoundException: if the given operation cant be found in the storage</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.get_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.get_operation">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">incident_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the operation with the specified incident_id</span>
+
+<span class="sd">        :param incident_id: incident_id of the operations</span>
+<span class="sd">        :type incident_id: string</span>
+<span class="sd">        :raises: OperationNotFoundException: if the given operation cant be found in the storage</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.get_operations_in_progress"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.get_operations_in_progress">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_operations_in_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all operations that are in progress and follow the filter rules</span>
+
+<span class="sd">        :param filter_by: rules to filter the operations</span>
+<span class="sd">        :type filter_by: dict</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.get_operations_completed"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.get_operations_completed">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_operations_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all operations that are completed and follow the filter rules</span>
+
+<span class="sd">        :param filter_by: rules to filter the operations</span>
+<span class="sd">        :type filter_by: dict</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.get_operations_failed"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.get_operations_failed">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_operations_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all operations that are failed and follow the filter rules</span>
+
+<span class="sd">        :param filter_by: rules to filter the operations</span>
+<span class="sd">        :type filter_by: dict</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.get_last_head_block_num"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.get_last_head_block_num">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_last_head_block_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the last head block num that was processed by this storage</span>
+
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IOperationStorage.set_last_head_block_num"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IOperationStorage.set_last_head_block_num">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">set_last_head_block_num</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_block_num</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the last head block num that was processed by this storage</span>
+
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="IAddressOperationStorage"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IAddressOperationStorage">[docs]</a><span class="k">class</span> <span class="nc">IAddressOperationStorage</span><span class="p">(</span><span class="n">IOperationStorage</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interface that defines address specific interfaces</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IAddressOperationStorage.track_balance"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IAddressOperationStorage.track_balance">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">track_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tells the storage to return the balance of the adress</span>
+<span class="sd">        as default in :func:`interface.IAddressOperationStorage.get_balances`.</span>
+
+<span class="sd">        :param adress: as is</span>
+<span class="sd">        :type adress: string</span>
+<span class="sd">        :raises: AddressAlreadyTrackedException: if the address is already tracked</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IAddressOperationStorage.untrack_balance"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IAddressOperationStorage.untrack_balance">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">untrack_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tells the storage to stop returning the balance of this address</span>
+<span class="sd">        as default in :func:`interface.IAddressOperationStorage.get_balances`.</span>
+
+<span class="sd">        :param address: as is</span>
+<span class="sd">        :type address: string</span>
+<span class="sd">        :raises: AddressNotTrackedException: if the address was not tracked at all</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="IAddressOperationStorage.get_balances"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.IAddressOperationStorage.get_balances">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_balances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addresses</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the address balances of the requested address names</span>
+
+<span class="sd">        :param addresses: list of requested addresses, default all tracked addresses</span>
+<span class="sd">        :type addresses: string or list of string</span>
+<span class="sd">        :raises: OperationStorageLostException: any technical problems contacting the storage</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="retry_auto_reconnect"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.retry_auto_reconnect">[docs]</a><span class="k">def</span> <span class="nf">retry_auto_reconnect</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a decorator for functions that utilize some external storage driver.</span>
+<span class="sd">    Any exception that reflects a connection error triggers an automatic</span>
+<span class="sd">    retry of the given function. Those exceptions are defined in</span>
+<span class="sd">    :func:`BasicOperationStorage.get_retry_exceptions`</span>
+
+<span class="sd">    :param func: the function that will obtain retry feature</span>
+<span class="sd">    :type func: function handle</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">f_retry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">num_tries</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operation_storage&quot;</span><span class="p">,</span> <span class="s2">&quot;retry_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">wait_in_ms</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operation_storage&quot;</span><span class="p">,</span> <span class="s2">&quot;retry_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;wait_in_ms&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">exceptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_retry_exceptions</span><span class="p">()</span>
+        <span class="n">last_exception</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tries</span><span class="p">):</span>  <span class="c1"># @UnusedVariable</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">last_exception</span> <span class="o">=</span> <span class="n">e</span>
+                <span class="k">if</span> <span class="n">wait_in_ms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait_in_ms</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+                <span class="k">continue</span>
+        <span class="k">raise</span> <span class="n">OperationStorageLostException</span><span class="p">(</span><span class="n">last_exception</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f_retry</span></div>
+
+
+<div class="viewcode-block" id="BasicOperationStorage"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.BasicOperationStorage">[docs]</a><span class="k">class</span> <span class="nc">BasicOperationStorage</span><span class="p">(</span><span class="n">IOperationStorage</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BasicOperationStorage.get_retry_exceptions"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.BasicOperationStorage.get_retry_exceptions">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_retry_exceptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a n-tupel with all exceptions that should trigger retry function</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+    <span class="k">def</span> <span class="nf">_validate_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="n">operation_formatter</span><span class="o">.</span><span class="n">validate_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_decode_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See :func:`operation_formatter.decode_operation`</span>
+<span class="sd">        :param operation:</span>
+<span class="sd">        :type operation:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">operation_formatter</span><span class="o">.</span><span class="n">decode_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BasicOperationStorage.flag_operation_completed"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.BasicOperationStorage.flag_operation_completed">[docs]</a>    <span class="k">def</span> <span class="nf">flag_operation_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Does simply status check and json schema validation</span>
+
+<span class="sd">            :param operation: operations struct adhering to the json schema definitions</span>
+<span class="sd">            :type operation: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># dont mutate input</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;in_progress&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">StatusInvalidException</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;in_progress&quot;</span>
+            <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chain_identifier&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidOperationException</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_num&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">NoBlockNumException</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">operation</span></div>
+
+<div class="viewcode-block" id="BasicOperationStorage.flag_operation_failed"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.BasicOperationStorage.flag_operation_failed">[docs]</a>    <span class="k">def</span> <span class="nf">flag_operation_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Does simply status check and json schema validation</span>
+
+<span class="sd">            :param operation: operations struct adhering to the json schema definitions</span>
+<span class="sd">            :type operation: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># dont mutate input</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;in_progress&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">StatusInvalidException</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># assume in progress</span>
+            <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;in_progress&quot;</span>
+            <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">operation</span></div>
+
+<div class="viewcode-block" id="BasicOperationStorage.insert_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.BasicOperationStorage.insert_operation">[docs]</a>    <span class="k">def</span> <span class="nf">insert_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Does simply status check and json schema validation</span>
+
+<span class="sd">            :param operation: operations struct adhering to the json schema definitions</span>
+<span class="sd">            :type operation: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># convert format if it comes directly from blockchain monitor</span>
+        <span class="k">if</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;op&quot;</span><span class="p">):</span>
+            <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">operation</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_num&quot;</span><span class="p">):</span>
+                <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;completed&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;in_progress&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_num&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">InvalidOperationException</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;in_progress&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_num&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">InvalidOperationException</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidOperationException</span><span class="p">()</span>
+
+        <span class="c1"># add insertion timestamp</span>
+        <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">date_to_string</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">operation</span></div>
+
+<div class="viewcode-block" id="BasicOperationStorage.delete_operation"><a class="viewcode-back" href="../../../bexi.operation_storage.interface.html#bexi.operation_storage.interface.BasicOperationStorage.delete_operation">[docs]</a>    <span class="k">def</span> <span class="nf">delete_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_or_incident_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Does simply status check and json schema validation if an operation dict is given</span>
+
+<span class="sd">            :param operation_or_incident_id: operations struct adhering to the json schema definitions, or incident_id</span>
+<span class="sd">            :type operation_or_incident_id: dict or str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">operation_or_incident_id</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="c1"># dont mutate input</span>
+            <span class="n">operation_or_incident_id</span> <span class="o">=</span> <span class="n">operation_or_incident_id</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_operation</span><span class="p">(</span><span class="n">operation_or_incident_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">operation_or_incident_id</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;in_progress&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">StatusInvalidException</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">operation_or_incident_id</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../bexi.html">bexi</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

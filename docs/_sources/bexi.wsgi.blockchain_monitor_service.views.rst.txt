@@ -1,0 +1,7 @@
+bexi\.wsgi\.blockchain\_monitor\_service\.views module
+======================================================
+
+.. automodule:: bexi.wsgi.blockchain_monitor_service.views
+    :members:
+    :undoc-members:
+    :show-inheritance:

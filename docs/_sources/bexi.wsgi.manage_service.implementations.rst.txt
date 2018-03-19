@@ -1,0 +1,7 @@
+bexi\.wsgi\.manage\_service\.implementations module
+===================================================
+
+.. automodule:: bexi.wsgi.manage_service.implementations
+    :members:
+    :undoc-members:
+    :show-inheritance:

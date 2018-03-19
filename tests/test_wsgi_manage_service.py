@@ -10,6 +10,7 @@ from bexi.operation_storage.interface import AddressAlreadyTrackedException,\
 from bexi.wsgi import manage_service
 from bexi.wsgi import sign_service
 from flask import json
+from bitshares.exceptions import AccountDoesNotExistsException
 
 
 class TestBlockchainApi(ATestOperationStorage):
@@ -31,7 +32,7 @@ class TestBlockchainApi(ATestOperationStorage):
         assert implementations.get_all_assets(5, 0) ==\
             {'continuation': None, 'items': [{'assetId': '1.3.0', 'address': 'None', 'name': 'BTS', 'accuracy': 5}, {'assetId': '1.3.121', 'address': 'None', 'name': 'USD', 'accuracy': 4}, {'assetId': '1.3.120', 'address': 'None', 'name': 'EUR', 'accuracy': 4}]}
 
-        implementations.get_all_assets(0)
+        implementations.get_all_assets(0, 0)
 
         self.assertRaises(ValueError,
                           implementations.get_all_assets,
@@ -76,7 +77,16 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_observe_address(self):
         address = create_unique_address("some_id", "user_name_bla")
+
+        self.assertRaises(
+            AccountDoesNotExistsException,
+            implementations.observe_address,
+            address)
+
+        address = create_unique_address(utils.get_exchange_account_id(), "user_name_bla")
+
         implementations.observe_address(address)
+
         self.assertRaises(
             AddressAlreadyTrackedException,
             implementations.observe_address,

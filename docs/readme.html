@@ -1,0 +1,161 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Short ReadMe &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Licensing Information" href="license.html" />
+    <link rel="prev" title="Welcome to BEXI - BitShares Exchange Integration’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="short-readme">
+<h1>Short ReadMe<a class="headerlink" href="#short-readme" title="Permalink to this headline">¶</a></h1>
+<p>Bexi is written in python and enables the integration of BitShares into an external exchange. The basic idea is that
+the external exchange will have one BitShares account to consolidate the funds that it holds for
+the customers. Deposits and withdrawals into and from said account is tracked and the customer balance
+calculated.</p>
+<p>Nevertheless, this module is not meant to be an accounting platform for the external exchange, it is merely
+the technical realization of the integration.</p>
+<div class="section" id="supported-exchanges">
+<h2>Supported exchanges<a class="headerlink" href="#supported-exchanges" title="Permalink to this headline">¶</a></h2>
+<p>This software was motivated and constructed for the implementation of the Lykke exchange. Thanks to Lykke
+it is available as open source (for licensing information please see LICENSE.rst file).
+If you operate your own exchange and wish to integrate BitShares, feel free to contact <a class="reference external" href="mailto:info&#37;&#52;&#48;blockchainprojectsbv&#46;com">info<span>&#64;</span>blockchainprojectsbv<span>&#46;</span>com</a>.</p>
+<p>This library was implemented according to</p>
+<blockquote>
+<div><a class="reference external" href="https://streams.lykke.com/Project/ProjectDetails/bitshares-blockchain-integration-api">https://streams.lykke.com/Project/ProjectDetails/bitshares-blockchain-integration-api</a>
+<a class="reference external" href="https://docs.google.com/document/d/1KVd-2tg-Ze5-b3kFYh1GUdGn9jvoo7HFO3wH_knpd3U/edit">https://docs.google.com/document/d/1KVd-2tg-Ze5-b3kFYh1GUdGn9jvoo7HFO3wH_knpd3U/edit</a></div></blockquote>
+</div>
+<div class="section" id="who-do-i-talk-to">
+<h2>Who do I talk to?<a class="headerlink" href="#who-do-i-talk-to" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="mailto:info&#37;&#52;&#48;blockchainprojectsbv&#46;com">info<span>&#64;</span>blockchainprojectsbv<span>&#46;</span>com</a></p>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Install environment</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ apt-get install -y python3 python3-pip
+</pre></div>
+</div>
+<p>Install virtual environment and setup</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ pip3 install virtualenv
+$ virtualenv env
+$ <span class="nb">source</span> env/bin/activate
+$ pip install -r requirements.txt
+</pre></div>
+</div>
+<p>Run all tests (tox installation required)</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ pip install -r requirements-test.txt
+$ tox
+</pre></div>
+</div>
+<p>Build documentation:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ make docs
+</pre></div>
+</div>
+</div>
+<div class="section" id="quick-guide">
+<h2>Quick Guide<a class="headerlink" href="#quick-guide" title="Permalink to this headline">¶</a></h2>
+<p>Fill in the operation storage details,
+as well as the BitShares exchange account and connection
+details in the config yaml files.
+The manage_service and blockchain_monitor require the memo key of the
+exchange account, whereas the sign_service requires only the active key.
+The active key is what you normally see as the private key, since it allows
+to move funds, whereas the memo key only allows reading the memo message of
+transfers.</p>
+<p>Then initiate the blockchain monitor</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py blockchain_monitor
+</pre></div>
+</div>
+<p>Start the blockchain monitor service (isalive wsgi response for blockchain monitor)</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py blockchain_monitor_service
+</pre></div>
+</div>
+<p>Start the sign service</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py sign_service
+</pre></div>
+</div>
+<p>and the manage service</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py manage_service
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to BEXI - BitShares Exchange Integration’s documentation!</a></li>
+      <li>Next: <a href="license.html" title="next chapter">Licensing Information</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/readme.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

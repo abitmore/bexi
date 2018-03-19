@@ -1,0 +1,7 @@
+bexi\.factory module
+====================
+
+.. automodule:: bexi.factory
+    :members:
+    :undoc-members:
+    :show-inheritance:

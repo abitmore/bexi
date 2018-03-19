@@ -1,0 +1,390 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.operation_storage.mongodb_storage &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bexi.operation_storage.mongodb_storage</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+<span class="kn">from</span> <span class="nn">pymongo</span> <span class="k">import</span> <span class="n">MongoClient</span>
+
+<span class="kn">from</span> <span class="nn">..addresses</span> <span class="k">import</span> <span class="n">split_unique_address</span>
+<span class="kn">from</span> <span class="nn">.interface</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">retry_auto_reconnect</span><span class="p">,</span>
+    <span class="n">BasicOperationStorage</span><span class="p">,</span>
+    <span class="n">AddressNotTrackedException</span><span class="p">,</span>
+    <span class="n">AddressAlreadyTrackedException</span><span class="p">,</span>
+    <span class="n">OperationNotFoundException</span><span class="p">,</span>
+    <span class="n">DuplicateOperationException</span><span class="p">,</span>
+    <span class="n">InvalidOperationException</span><span class="p">,</span>
+    <span class="n">OperationStorageException</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MongoDBOperationsStorage"><a class="viewcode-back" href="../../../bexi.operation_storage.mongodb_storage.html#bexi.operation_storage.mongodb_storage.MongoDBOperationsStorage">[docs]</a><span class="k">class</span> <span class="nc">MongoDBOperationsStorage</span><span class="p">(</span><span class="n">BasicOperationStorage</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implementation of :class:`.interface.IOperationStorage` with MongoDB using the</span>
+<span class="sd">    default implementation :class:`.interface.BasicOperationStorage`</span>
+
+<span class="sd">    On creating an instance the mongodb client is setup and all</span>
+<span class="sd">    necessary databases and collections are created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MongoDBOperationsStorage.get_retry_exceptions"><a class="viewcode-back" href="../../../bexi.operation_storage.mongodb_storage.html#bexi.operation_storage.mongodb_storage.MongoDBOperationsStorage.get_retry_exceptions">[docs]</a>    <span class="k">def</span> <span class="nf">get_retry_exceptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">AutoReconnect</span><span class="p">,</span>
+                <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ServerSelectionTimeoutError</span><span class="p">,)</span></div>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mongodb_config</span><span class="p">,</span> <span class="n">mongodb_client</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MongoDBOperationsStorage</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mongodb_config</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No mongo db configuration provided!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span> <span class="o">=</span> <span class="n">mongodb_config</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mongodb_client</span><span class="p">:</span>
+            <span class="n">mongodb_client</span> <span class="o">=</span> <span class="n">MongoClient</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">mongodb_config</span><span class="p">[</span><span class="s2">&quot;seeds&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span> <span class="o">=</span> <span class="n">mongodb_client</span><span class="p">[</span><span class="n">mongodb_config</span><span class="p">[</span><span class="s2">&quot;db&quot;</span><span class="p">]]</span>
+
+        <span class="c1"># if collections doesnt exist, create it</span>
+        <span class="k">if</span> <span class="n">mongodb_config</span><span class="p">[</span><span class="s2">&quot;operation_collection&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span>\
+                <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">(</span><span class="n">include_system_collections</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_operations_storage</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;operation_collection&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">mongodb_config</span><span class="p">[</span><span class="s2">&quot;status_collection&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span>\
+                <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">(</span><span class="n">include_system_collections</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_status_storage</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;status_collection&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">mongodb_config</span><span class="p">[</span><span class="s2">&quot;address_collection&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span>\
+                <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">(</span><span class="n">include_system_collections</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_address_storage</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_address_storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;address_collection&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_debug_print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+        <span class="n">pprint</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_create_address_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;address_collection&quot;</span><span class="p">],</span>
+            <span class="n">validator</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;$jsonSchema&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;type&quot;</span>
+                                 <span class="p">],</span>
+                    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;enum&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;tracked&quot;</span><span class="p">]},</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;address_collection&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s1">&#39;address&#39;</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">ASCENDING</span><span class="p">),</span>
+             <span class="p">],</span>
+            <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_create_status_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;status_collection&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_create_operations_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;operation_collection&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;operation_collection&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s1">&#39;chain_identifier&#39;</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">ASCENDING</span><span class="p">),</span>
+             <span class="p">],</span>
+            <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mongodb_config</span><span class="p">[</span><span class="s2">&quot;operation_collection&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s1">&#39;incident_id&#39;</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">ASCENDING</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;customer_id&#39;</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">ASCENDING</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">ASCENDING</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;block_num&#39;</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">ASCENDING</span><span class="p">),</span>
+             <span class="p">],</span>
+            <span class="n">unique</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_unique_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given an operation a dictionary is returned that only contains the keys that</span>
+<span class="sd">        are necessary for unique identification in the storage</span>
+
+<span class="sd">        :param operation: operations struct as defined in :func:`interface.IOperationStorage.insert_operation`.</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;chain_identifier&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;chain_identifier&quot;</span><span class="p">]}</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">track_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="n">split</span> <span class="o">=</span> <span class="n">split_unique_address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">split</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;customer_id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">split</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;account_id&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">OperationStorageException</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_address_storage</span><span class="o">.</span><span class="n">insert_one</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">address</span><span class="p">,</span>
+                 <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;tracked&quot;</span><span class="p">}</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">DuplicateKeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AddressAlreadyTrackedException</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">untrack_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_address_storage</span><span class="o">.</span><span class="n">delete_one</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">address</span><span class="p">,</span>
+             <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;tracked&quot;</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AddressNotTrackedException</span><span class="p">()</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">flag_operation_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="c1"># do basics</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MongoDBOperationsStorage</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">flag_operation_completed</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_unique_filter</span><span class="p">(</span><span class="n">operation</span><span class="p">),</span>
+            <span class="p">{</span><span class="s2">&quot;$set&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;completed&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;chain_identifier&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;chain_identifier&quot;</span><span class="p">]}})</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">modified_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OperationNotFoundException</span><span class="p">()</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">flag_operation_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># do basics</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MongoDBOperationsStorage</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">flag_operation_failed</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_unique_filter</span><span class="p">(</span><span class="n">operation</span><span class="p">),</span>
+            <span class="p">{</span><span class="s2">&quot;$set&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">message</span><span class="p">}})</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">modified_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OperationNotFoundException</span><span class="p">()</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">insert_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="c1"># do basics</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MongoDBOperationsStorage</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">insert_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">insert_one</span><span class="p">(</span>
+                <span class="n">operation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">DuplicateKeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DuplicateOperationException</span><span class="p">()</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">insert_or_update_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="c1"># do basics</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MongoDBOperationsStorage</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">insert_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">insert_one</span><span class="p">(</span>
+                <span class="n">operation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">DuplicateKeyError</span><span class="p">:</span>
+            <span class="c1"># could be an update to completed ...</span>
+            <span class="k">if</span> <span class="n">operation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_num&quot;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">operation</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flag_operation_completed</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">OperationNotFoundException</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">DuplicateOperationException</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DuplicateOperationException</span><span class="p">()</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">delete_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_or_incident_id</span><span class="p">):</span>
+        <span class="c1"># do basics</span>
+        <span class="n">operation_or_incident_id</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MongoDBOperationsStorage</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">delete_operation</span><span class="p">(</span><span class="n">operation_or_incident_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">operation_or_incident_id</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">incident_id</span> <span class="o">=</span> <span class="n">operation_or_incident_id</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">delete_one</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;incident_id&quot;</span><span class="p">:</span> <span class="n">incident_id</span><span class="p">}</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">delete_one</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_unique_filter</span><span class="p">(</span><span class="n">operation_or_incident_id</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OperationNotFoundException</span><span class="p">()</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">get_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">incident_id</span><span class="p">):</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;incident_id&quot;</span><span class="p">:</span> <span class="n">incident_id</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OperationNotFoundException</span><span class="p">()</span>
+        <span class="n">_id</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_id&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">operation</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">get_balances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addresses</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">address_balances</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">addresses</span><span class="p">:</span>
+            <span class="n">addresses</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span>
+                         <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_address_storage</span><span class="o">.</span><span class="n">find</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;tracked&quot;</span><span class="p">}))]</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">addresses</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">addresses</span> <span class="o">=</span> <span class="p">[</span><span class="n">addresses</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">address</span> <span class="ow">in</span> <span class="n">addresses</span><span class="p">:</span>
+            <span class="n">addrs</span> <span class="o">=</span> <span class="n">split_unique_address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_operations_completed</span><span class="p">(</span>
+                    <span class="n">filter_by</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;customer_id&quot;</span><span class="p">:</span> <span class="n">addrs</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">]</span>
+                    <span class="p">}):</span>
+                <span class="k">if</span> <span class="n">addrs</span><span class="p">[</span><span class="s2">&quot;account_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]:</span>
+                    <span class="c1"># negative</span>
+                    <span class="n">asset_id</span> <span class="o">=</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;amount_asset_id&quot;</span><span class="p">]</span>
+                    <span class="n">balance</span> <span class="o">=</span> <span class="n">address_balances</span><span class="p">[</span><span class="n">address</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">asset_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+                    <span class="n">address_balances</span><span class="p">[</span><span class="n">address</span><span class="p">][</span><span class="n">asset_id</span><span class="p">]</span> <span class="o">=</span>\
+                        <span class="n">balance</span> <span class="o">-</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;amount_value&quot;</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">addrs</span><span class="p">[</span><span class="s2">&quot;account_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]:</span>
+                    <span class="c1"># positive</span>
+                    <span class="n">asset_id</span> <span class="o">=</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;amount_asset_id&quot;</span><span class="p">]</span>
+                    <span class="n">balance</span> <span class="o">=</span> <span class="n">address_balances</span><span class="p">[</span><span class="n">address</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">asset_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+                    <span class="n">address_balances</span><span class="p">[</span><span class="n">address</span><span class="p">][</span><span class="n">asset_id</span><span class="p">]</span> <span class="o">=</span>\
+                        <span class="n">balance</span> <span class="o">+</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;amount_value&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">InvalidOperationException</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">address_balances</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">filter_by</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">filter_by</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;customer_id&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;customer_id&quot;</span><span class="p">:</span> <span class="n">filter_by</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;customer_id&quot;</span><span class="p">)}</span>
+            <span class="k">if</span> <span class="n">filter_by</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;address&quot;</span><span class="p">):</span>
+                <span class="n">addrs</span> <span class="o">=</span> <span class="n">split_unique_address</span><span class="p">(</span><span class="n">filter_by</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;address&quot;</span><span class="p">))</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;customer_id&quot;</span><span class="p">:</span> <span class="n">addrs</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">]}</span>
+            <span class="k">if</span> <span class="n">filter_by</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Filter not supported&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">get_operations_in_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">filter_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;in_progress&quot;</span><span class="p">}</span>
+        <span class="n">filter_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_filter</span><span class="p">(</span><span class="n">filter_by</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">))</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">get_operations_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">filter_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;completed&quot;</span><span class="p">}</span>
+        <span class="n">filter_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_filter</span><span class="p">(</span><span class="n">filter_by</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">))</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">get_operations_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">filter_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">}</span>
+        <span class="n">filter_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_filter</span><span class="p">(</span><span class="n">filter_by</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_operations_storage</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">))</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">get_last_head_block_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">document</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status_storage</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;last_head_block_num&quot;</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">document</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">document</span><span class="p">[</span><span class="s2">&quot;last_head_block_num&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@retry_auto_reconnect</span>
+    <span class="k">def</span> <span class="nf">set_last_head_block_num</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_block_num</span><span class="p">):</span>
+        <span class="n">current_last</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_last_head_block_num</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">current_last</span> <span class="o">&gt;=</span> <span class="n">head_block_num</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Marching backwards not supported&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status_storage</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;last_head_block_num&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;last_head_block_num&#39;</span><span class="p">:</span> <span class="n">head_block_num</span><span class="p">}},</span>
+            <span class="n">upsert</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../bexi.html">bexi</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

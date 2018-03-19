@@ -1,0 +1,512 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.operation_storage.interface module &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bexi.operation_storage.mongodb_storage module" href="bexi.operation_storage.mongodb_storage.html" />
+    <link rel="prev" title="bexi.operation_storage.azure_storage module" href="bexi.operation_storage.azure_storage.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-bexi.operation_storage.interface">
+<span id="bexi-operation-storage-interface-module"></span><h1>bexi.operation_storage.interface module<a class="headerlink" href="#module-bexi.operation_storage.interface" title="Permalink to this headline">¶</a></h1>
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.AddressAlreadyTrackedException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">AddressAlreadyTrackedException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#AddressAlreadyTrackedException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.AddressAlreadyTrackedException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.AddressNotTrackedException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">AddressNotTrackedException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#AddressNotTrackedException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.AddressNotTrackedException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bexi.operation_storage.interface.BasicOperationStorage">
+<em class="property">class </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">BasicOperationStorage</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#BasicOperationStorage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.BasicOperationStorage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.IOperationStorage" title="bexi.operation_storage.interface.IOperationStorage"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.IOperationStorage</span></code></a></p>
+<dl class="method">
+<dt id="bexi.operation_storage.interface.BasicOperationStorage.delete_operation">
+<code class="descname">delete_operation</code><span class="sig-paren">(</span><em>operation_or_incident_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#BasicOperationStorage.delete_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.BasicOperationStorage.delete_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does simply status check and json schema validation if an operation dict is given</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation_or_incident_id</strong> (<em>dict</em><em> or </em><em>str</em>) – operations struct adhering to the json schema definitions, or incident_id</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.BasicOperationStorage.flag_operation_completed">
+<code class="descname">flag_operation_completed</code><span class="sig-paren">(</span><em>operation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#BasicOperationStorage.flag_operation_completed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.BasicOperationStorage.flag_operation_completed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does simply status check and json schema validation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation</strong> (<em>dict</em>) – operations struct adhering to the json schema definitions</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.BasicOperationStorage.flag_operation_failed">
+<code class="descname">flag_operation_failed</code><span class="sig-paren">(</span><em>operation</em>, <em>message=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#BasicOperationStorage.flag_operation_failed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.BasicOperationStorage.flag_operation_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does simply status check and json schema validation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation</strong> (<em>dict</em>) – operations struct adhering to the json schema definitions</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.BasicOperationStorage.get_retry_exceptions">
+<code class="descname">get_retry_exceptions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#BasicOperationStorage.get_retry_exceptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.BasicOperationStorage.get_retry_exceptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a n-tupel with all exceptions that should trigger retry function</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.BasicOperationStorage.insert_operation">
+<code class="descname">insert_operation</code><span class="sig-paren">(</span><em>operation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#BasicOperationStorage.insert_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.BasicOperationStorage.insert_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does simply status check and json schema validation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation</strong> (<em>dict</em>) – operations struct adhering to the json schema definitions</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.DuplicateOperationException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">DuplicateOperationException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#DuplicateOperationException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.DuplicateOperationException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationNotFoundException" title="bexi.operation_storage.interface.OperationNotFoundException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationNotFoundException</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bexi.operation_storage.interface.IAddressOperationStorage">
+<em class="property">class </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">IAddressOperationStorage</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IAddressOperationStorage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IAddressOperationStorage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.IOperationStorage" title="bexi.operation_storage.interface.IOperationStorage"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.IOperationStorage</span></code></a></p>
+<p>Interface that defines address specific interfaces</p>
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IAddressOperationStorage.get_balances">
+<code class="descname">get_balances</code><span class="sig-paren">(</span><em>addresses=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IAddressOperationStorage.get_balances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IAddressOperationStorage.get_balances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the address balances of the requested address names</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>addresses</strong> (<em>string</em><em> or </em><em>list of string</em>) – list of requested addresses, default all tracked addresses</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IAddressOperationStorage.track_balance">
+<code class="descname">track_balance</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IAddressOperationStorage.track_balance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IAddressOperationStorage.track_balance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells the storage to return the balance of the adress
+as default in <code class="xref py py-func docutils literal"><span class="pre">interface.IAddressOperationStorage.get_balances()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>adress</strong> (<em>string</em>) – as is</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">AddressAlreadyTrackedException: if the address is already tracked</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IAddressOperationStorage.untrack_balance">
+<code class="descname">untrack_balance</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IAddressOperationStorage.untrack_balance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IAddressOperationStorage.untrack_balance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells the storage to stop returning the balance of this address
+as default in <code class="xref py py-func docutils literal"><span class="pre">interface.IAddressOperationStorage.get_balances()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>string</em>) – as is</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">AddressNotTrackedException: if the address was not tracked at all</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bexi.operation_storage.interface.IOperationStorage">
+<em class="property">class </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">IOperationStorage</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></p>
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.delete_operation">
+<code class="descname">delete_operation</code><span class="sig-paren">(</span><em>operation_or_incident_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.delete_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.delete_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes an operation from the storage.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation_or_incident_id</strong> (<em>dict</em><em> or </em><em>string</em>) – operations struct adhering to the json schema definitions
+or the incident_id of the operation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">StatusInvalidException: if the operation status is not completed or failed</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationNotFoundException: if the given operation cant be found in the storage</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.flag_operation_completed">
+<code class="descname">flag_operation_completed</code><span class="sig-paren">(</span><em>operation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.flag_operation_completed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.flag_operation_completed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marks an operation that is in_progress as completed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation</strong> (<em>dict</em>) – operations struct as defined in <code class="xref py py-func docutils literal"><span class="pre">interface.IOperationStorage.insert_operation()</span></code>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">StatusInvalidException: if the operation status is not in_progress</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">NoBlockNumException: if no block_num was given</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">InvalidOperationException: if the operation is not well defined or couldnt be found</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationNotFoundException: if the given operation cant be found in the storage</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.flag_operation_failed">
+<code class="descname">flag_operation_failed</code><span class="sig-paren">(</span><em>operation</em>, <em>message=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.flag_operation_failed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.flag_operation_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marks an operation that is in_progress as failed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>operation</strong> (<em>dict</em>) – operations struct adhering to the json schema definitions</li>
+<li><strong>message</strong> (<em>str</em>) – reason of failure</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first">StatusInvalidException: if the operation status is not in_progress</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first">OperationNotFoundException: if the given operation cant be found in the storage</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last">OperationStorageLostException: any technical problems contacting the storage</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.get_last_head_block_num">
+<code class="descname">get_last_head_block_num</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.get_last_head_block_num"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.get_last_head_block_num" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the last head block num that was processed by this storage</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.get_operation">
+<code class="descname">get_operation</code><span class="sig-paren">(</span><em>incident_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.get_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.get_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the operation with the specified incident_id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>incident_id</strong> (<em>string</em>) – incident_id of the operations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationNotFoundException: if the given operation cant be found in the storage</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.get_operations_completed">
+<code class="descname">get_operations_completed</code><span class="sig-paren">(</span><em>filter_by</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.get_operations_completed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.get_operations_completed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all operations that are completed and follow the filter rules</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_by</strong> (<em>dict</em>) – rules to filter the operations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.get_operations_failed">
+<code class="descname">get_operations_failed</code><span class="sig-paren">(</span><em>filter_by</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.get_operations_failed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.get_operations_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all operations that are failed and follow the filter rules</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_by</strong> (<em>dict</em>) – rules to filter the operations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.get_operations_in_progress">
+<code class="descname">get_operations_in_progress</code><span class="sig-paren">(</span><em>filter_by</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.get_operations_in_progress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.get_operations_in_progress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all operations that are in progress and follow the filter rules</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_by</strong> (<em>dict</em>) – rules to filter the operations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.insert_operation">
+<code class="descname">insert_operation</code><span class="sig-paren">(</span><em>operation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.insert_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.insert_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts the operation into the storage. Operation status
+can be in_progress or completed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation</strong> (<em>dict</em>) – operations struct adhering to the json schema definitions</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">InvalidOperationException: if the operation is not well defined</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">DuplicateOperationException: if the operation already exists in the storage</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.insert_or_update_operation">
+<code class="descname">insert_or_update_operation</code><span class="sig-paren">(</span><em>operation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.insert_or_update_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.insert_or_update_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts the operation, or updates it into the storage. Operation status
+can be in_progress or completed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation</strong> (<em>dict</em>) – operations struct adhering to the json schema definitions</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">InvalidOperationException: if the operation is not well defined</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">DuplicateOperationException: if the operation already exists in the storage</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="bexi.operation_storage.interface.IOperationStorage.set_last_head_block_num">
+<code class="descname">set_last_head_block_num</code><span class="sig-paren">(</span><em>head_block_num</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#IOperationStorage.set_last_head_block_num"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.IOperationStorage.set_last_head_block_num" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the last head block num that was processed by this storage</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body">OperationStorageLostException: any technical problems contacting the storage</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.InvalidOperationException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">InvalidOperationException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#InvalidOperationException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.InvalidOperationException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.NoBlockNumException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">NoBlockNumException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#NoBlockNumException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.NoBlockNumException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.OperationNotFoundException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">OperationNotFoundException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#OperationNotFoundException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.OperationNotFoundException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.OperationStorageException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">OperationStorageException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#OperationStorageException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.OperationStorageException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>General purpose exception for the interface.
+Any and all exceptions thrown by implementations must be
+of this class</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.OperationStorageLostException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">OperationStorageLostException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#OperationStorageLostException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.OperationStorageLostException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bexi.operation_storage.interface.StatusInvalidException">
+<em class="property">exception </em><code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">StatusInvalidException</code><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#StatusInvalidException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.StatusInvalidException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bexi.operation_storage.interface.OperationStorageException" title="bexi.operation_storage.interface.OperationStorageException"><code class="xref py py-class docutils literal"><span class="pre">bexi.operation_storage.interface.OperationStorageException</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bexi.operation_storage.interface.retry_auto_reconnect">
+<code class="descclassname">bexi.operation_storage.interface.</code><code class="descname">retry_auto_reconnect</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bexi/operation_storage/interface.html#retry_auto_reconnect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bexi.operation_storage.interface.retry_auto_reconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a decorator for functions that utilize some external storage driver.
+Any exception that reflects a connection error triggers an automatic
+retry of the given function. Those exceptions are defined in
+<a class="reference internal" href="#bexi.operation_storage.interface.BasicOperationStorage.get_retry_exceptions" title="bexi.operation_storage.interface.BasicOperationStorage.get_retry_exceptions"><code class="xref py py-func docutils literal"><span class="pre">BasicOperationStorage.get_retry_exceptions()</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>func</strong> (<em>function handle</em>) – the function that will obtain retry feature</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="bexi.html">bexi package</a><ul>
+  <li><a href="bexi.operation_storage.html">bexi.operation_storage package</a><ul>
+      <li>Previous: <a href="bexi.operation_storage.azure_storage.html" title="previous chapter">bexi.operation_storage.azure_storage module</a></li>
+      <li>Next: <a href="bexi.operation_storage.mongodb_storage.html" title="next chapter">bexi.operation_storage.mongodb_storage module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/bexi.operation_storage.interface.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,167 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.transaction_signer &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bexi.transaction_signer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">bitsharesbase.signedtransactions</span> <span class="k">import</span> <span class="n">Signed_Transaction</span>
+
+
+<div class="viewcode-block" id="sign_transaction"><a class="viewcode-back" href="../../bexi.transaction_signer.html#bexi.transaction_signer.sign_transaction">[docs]</a><span class="k">def</span> <span class="nf">sign_transaction</span><span class="p">(</span><span class="n">transaction</span><span class="p">,</span> <span class="n">wifs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This methed signs a raw/unsigned transaction with the provided private</span>
+<span class="sd">        keys.</span>
+
+<span class="sd">        .. note:: The method does not guarantee that the blockchain will accept</span>
+<span class="sd">            the signed transaction. This may happen in multiple cases, such as</span>
+<span class="sd">            a) signed with irrelevant or redundant private keys, b)</span>
+<span class="sd">            insufficient permissions to perform what is requested in the</span>
+<span class="sd">            operations.</span>
+
+<span class="sd">        .. note:: This method does **not** have a connection to the blockchain.</span>
+<span class="sd">            Hence, neither the expiration, nor any of the TaPOS parameters</span>
+<span class="sd">            (``ref_block_num``, nor ``ref_block_prefix``) are obtained here.</span>
+<span class="sd">            The method needs to be provided with a fully valid (but unsigned</span>
+<span class="sd">            transaction).</span>
+
+<span class="sd">        An unsigned transaction takes the following form:</span>
+
+<span class="sd">        .. code-block: js</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;ref_block_num&quot;: 49506,</span>
+<span class="sd">                &quot;ref_block_prefix&quot;: 2292772274,</span>
+<span class="sd">                &quot;expiration&quot;: &quot;2018-01-25T08:29:00&quot;,</span>
+<span class="sd">                &quot;operations&quot;: [[</span>
+<span class="sd">                    2, {</span>
+<span class="sd">                        &quot;fee&quot;: {</span>
+<span class="sd">                            &quot;amount&quot;: 9,</span>
+<span class="sd">                            &quot;asset_id&quot;: &quot;1.3.0&quot;},</span>
+<span class="sd">                        &quot;fee_paying_account&quot;: &quot;1.2.126225&quot;,</span>
+<span class="sd">                        &quot;order&quot;: &quot;1.7.49956139&quot;,</span>
+<span class="sd">                        &quot;extensions&quot;: []}]],</span>
+<span class="sd">                &quot;extensions&quot;: [],</span>
+<span class="sd">                &quot;signatures&quot;: [],</span>
+<span class="sd">            }</span>
+
+<span class="sd">        The operation (here, operation type (0) is a ``transfer``) is the</span>
+<span class="sd">        actual action that should take place on the blockchain. The parameters</span>
+<span class="sd">        around it are required for a valid transaction and need to be obtained</span>
+<span class="sd">        outside this method.</span>
+
+
+<span class="sd">        For sake of completion, we here describe how the ``ref_block_num`` and</span>
+<span class="sd">        ``ref_block_prefix`` are obtained from the blockchain</span>
+<span class="sd">        (`github &lt;https://github.com/xeroc/python-graphenelib/blob/master/graphenebase/transactions.py#L18-L26&gt;`_):</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            dynBCParams = rpc.get_dynamic_global_properties()</span>
+<span class="sd">            ref_block_num = dynBCParams[&quot;head_block_number&quot;] &amp; 0xFFFF</span>
+<span class="sd">            ref_block_prefix = struct.unpack_from(&quot;&lt;I&quot;, unhexlify(dynBCParams[&quot;head_block_id&quot;]), 4)[0]</span>
+
+<span class="sd">        .. important:: The expiration **must not** be more than 1 day in the future!</span>
+
+<span class="sd">        :param dict transaction: unsigned transaction</span>
+<span class="sd">        :param list wifs: list of private keys in wif format</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        :returns: signed transaction</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate Signed_Transaction with content</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transaction</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wifs</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">))</span>
+
+    <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;BTS&quot;</span>
+    <span class="k">if</span> <span class="n">transaction</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;BTS&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;BTS&quot;</span><span class="p">:</span>
+        <span class="c1"># call transaction signer</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">transaction</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;prefix&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;BTS&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;BTS&quot;</span><span class="p">:</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">transaction</span><span class="p">[</span><span class="s2">&quot;prefix&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">transaction</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">]):</span>
+            <span class="n">transaction</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;prefix&quot;</span><span class="p">:</span> <span class="n">transaction</span><span class="p">[</span><span class="s2">&quot;prefix&quot;</span><span class="p">]})</span>
+
+    <span class="n">tx</span> <span class="o">=</span> <span class="n">Signed_Transaction</span><span class="p">(</span><span class="o">**</span><span class="n">transaction</span><span class="p">)</span>
+    <span class="c1"># call transaction signer</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">wifs</span><span class="p">,</span> <span class="n">chain</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;transaction_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">id</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../bexi.html">bexi</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

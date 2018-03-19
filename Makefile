@@ -40,7 +40,7 @@ dist:
 	python3 setup.py bdist_wheel upload
 
 docs:
-	sphinx-apidoc -d 6 -e -f -o docs bexi
-	make -C docs clean html
+	sphinx-apidoc -d 6 -e -f -o docs_build bexi
+	make -C docs_build clean html
 
 release: clean check dist git

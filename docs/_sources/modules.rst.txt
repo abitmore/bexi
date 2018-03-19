@@ -1,0 +1,7 @@
+bexi
+====
+
+.. toctree::
+   :maxdepth: 6
+
+   bexi

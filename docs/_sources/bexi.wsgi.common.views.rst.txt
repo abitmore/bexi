@@ -1,0 +1,7 @@
+bexi\.wsgi\.common\.views module
+================================
+
+.. automodule:: bexi.wsgi.common.views
+    :members:
+    :undoc-members:
+    :show-inheritance:

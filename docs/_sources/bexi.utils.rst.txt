@@ -1,0 +1,7 @@
+bexi\.utils module
+==================
+
+.. automodule:: bexi.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:

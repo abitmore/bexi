@@ -1,0 +1,211 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>bexi.addresses &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bexi.addresses</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+
+
+<span class="n">DELIMITER</span> <span class="o">=</span> <span class="s2">&quot;:::&quot;</span>
+
+
+<div class="viewcode-block" id="split_unique_address"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.split_unique_address">[docs]</a><span class="k">def</span> <span class="nf">split_unique_address</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits the address into bitshares account id and customer id</span>
+
+<span class="sd">    :param address: address in the format &lt;account_id&gt;DELIMITER&lt;customer_id&gt;</span>
+<span class="sd">    :type address: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">splitted</span> <span class="o">=</span> <span class="n">address</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">DELIMITER</span><span class="p">)</span>
+    <span class="n">always</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;account_id&quot;</span><span class="p">:</span> <span class="n">splitted</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+              <span class="s2">&quot;customer_id&quot;</span><span class="p">:</span> <span class="n">splitted</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitted</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">always</span><span class="p">[</span><span class="s2">&quot;incident_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">splitted</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">always</span></div>
+
+
+<div class="viewcode-block" id="get_from_address_from_operation"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.get_from_address_from_operation">[docs]</a><span class="k">def</span> <span class="nf">get_from_address_from_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns the from address of the given operation.</span>
+<span class="sd">        if the from address is the exchange account,</span>
+<span class="sd">        the address contains the customer_id, otherwise NULL string</span>
+<span class="sd">        is set</span>
+
+<span class="sd">        :param operation: operation formatted for operation storage</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_exchange_account</span><span class="p">(</span><span class="n">operation</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="n">get_address_from_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="s2">&quot;NULL&quot;</span></div>
+
+
+<div class="viewcode-block" id="get_to_address_from_operation"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.get_to_address_from_operation">[docs]</a><span class="k">def</span> <span class="nf">get_to_address_from_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns the to address of the given operation.</span>
+<span class="sd">        if the to address is the exchange account,</span>
+<span class="sd">        the address contains the customer_id, otherwise NULL string</span>
+<span class="sd">        is set</span>
+
+<span class="sd">        :param operation: operation formatted for operation storage</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_exchange_account</span><span class="p">(</span><span class="n">operation</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="n">get_address_from_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="s2">&quot;NULL&quot;</span></div>
+
+
+<div class="viewcode-block" id="get_address_from_operation"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.get_address_from_operation">[docs]</a><span class="k">def</span> <span class="nf">get_address_from_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; assumes that the operation is either from or to an exchange account.</span>
+<span class="sd">        the address of this operation is then returned as</span>
+<span class="sd">        &lt;exchange_account_id&gt;DELIMITER&lt;customer_id&gt;</span>
+
+<span class="sd">        :param operation: operation formatted for operation storage</span>
+<span class="sd">        :type operation: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_exchange_account</span><span class="p">(</span><span class="n">operation</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_exchange_account</span><span class="p">(</span><span class="n">operation</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="n">operation</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">]</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No operaton concerning this exchange&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_unique_address"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.create_unique_address">[docs]</a><span class="k">def</span> <span class="nf">create_unique_address</span><span class="p">(</span><span class="n">account_id</span><span class="p">,</span> <span class="n">randomizer</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The external exchange requires a unique address, which is constructed using</span>
+<span class="sd">    the bitshares account_id and some unique random string used as the customer_id.</span>
+
+<span class="sd">    Format: &lt;account_id&gt;DELIMITER&lt;customer_id&gt;</span>
+
+<span class="sd">    :param account_id: bitshares account id</span>
+<span class="sd">    :type account_id: string, format 1.2.XXX</span>
+<span class="sd">    :param randomizer: random string generator</span>
+<span class="sd">    :type randomizer: function handle</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">randomizer</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">account_id</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="n">randomizer</span>
+    <span class="k">return</span> <span class="n">account_id</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">randomizer</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="create_memo"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.create_memo">[docs]</a><span class="k">def</span> <span class="nf">create_memo</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">incident_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create plain text memo for an address/incident pair.</span>
+<span class="sd">        The memo will contain &lt;customer_id&gt;DELIMITER&lt;incident_id&gt;,</span>
+<span class="sd">        this is done to have full transparency on the blockchain</span>
+
+<span class="sd">        :param address: address in the format &lt;account_id&gt;DELIMITER&lt;customer_id&gt;</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param incident_id: unique incident id</span>
+<span class="sd">        :type incident_id: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="n">split_unique_address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+    <span class="n">memo</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">address</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">]:</span>
+        <span class="n">memo</span> <span class="o">=</span> <span class="n">memo</span> <span class="o">+</span> <span class="n">address</span><span class="p">[</span><span class="s2">&quot;customer_id&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">incident_id</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">memo</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">memo</span> <span class="o">=</span> <span class="n">memo</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="n">incident_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">memo</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">DELIMITER</span> <span class="o">+</span> <span class="n">incident_id</span>
+    <span class="k">return</span> <span class="n">memo</span></div>
+
+
+<div class="viewcode-block" id="split_memo"><a class="viewcode-back" href="../../bexi.addresses.html#bexi.addresses.split_memo">[docs]</a><span class="k">def</span> <span class="nf">split_memo</span><span class="p">(</span><span class="n">memo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Split plain text memo into address/incident pair</span>
+
+<span class="sd">        :param memo: memo string in the format &lt;customer_id&gt;DELIMITER&lt;incident_id&gt;,</span>
+<span class="sd">                     incident_id is optional</span>
+<span class="sd">        :type memo: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">memo</span> <span class="ow">or</span> <span class="n">memo</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+
+    <span class="n">splitted</span> <span class="o">=</span> <span class="n">memo</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">DELIMITER</span><span class="p">)</span>
+    <span class="n">always</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;customer_id&quot;</span><span class="p">:</span> <span class="n">splitted</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitted</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">always</span><span class="p">[</span><span class="s2">&quot;incident_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">splitted</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">always</span><span class="p">[</span><span class="s2">&quot;incident_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">always</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../bexi.html">bexi</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
