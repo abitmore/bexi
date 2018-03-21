@@ -117,7 +117,7 @@ class TestIntegration(AFlaskTest):
         )
         flag_completed(block_num, utils.get_exchange_memo_key())
 
-        response = self.client.post(url_for('Blockchain.Api.get_balances') + "?take=1")
+        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=1")
         assert response.status_code == 200
         self.assertEqual(response.json["items"][0]["balance"], 110000)
 
@@ -134,7 +134,7 @@ class TestIntegration(AFlaskTest):
             utils.get_exchange_active_key()
         )
 
-        response = self.client.post(url_for('Blockchain.Api.get_balances') + "?take=1")
+        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=1")
         assert response.status_code == 200
         self.assertEqual(response.json["items"][0]["balance"], 10000)
 
@@ -152,7 +152,7 @@ class TestIntegration(AFlaskTest):
         )
         flag_completed(block_num, self.get_customer_memo_key())
 
-        response = self.client.post(url_for('Blockchain.Api.get_balances') + "?take=1")
+        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=1")
         assert response.status_code == 200
 
         self.assertEqual(response.json["items"][0]["balance"], 10000)

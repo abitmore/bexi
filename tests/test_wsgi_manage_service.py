@@ -34,28 +34,6 @@ class TestBlockchainApi(ATestOperationStorage):
 
         implementations.get_all_assets(0, 0)
 
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          "!@")
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          "32.56")
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          "32,25")
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          43.2)
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          "querty")
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          "")
-        self.assertRaises(ValueError,
-                          implementations.get_all_assets,
-                          None)
-
     def test_get_asset(self):
         assert implementations.get_asset('1.3.0') ==\
             {'assetId': '1.3.0', 'address': 'None', 'name': 'BTS', 'accuracy': 5}

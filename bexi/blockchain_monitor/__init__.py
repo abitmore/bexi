@@ -132,6 +132,7 @@ class BlockchainMonitor(object):
         """
         for block in Blockchain(
             mode=self.watch_mode,
+            max_block_wait_repetition=10,
             bitshares_instance=self.bitshares
         ).blocks(
             start=self.start_block,

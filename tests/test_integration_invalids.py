@@ -60,6 +60,15 @@ class TestIntegration(AFlaskTest):
         self.invalidate(url_for('Blockchain.Api.get_all_assets', take="35.23"),
                         400)
 
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take="35,23"),
+                        400)
+
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take=""),
+                        400)
+
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take=None),
+                        400)
+
     def test_observe_address(self):
         self.invalidate(url_for('Blockchain.Api.observe_address', address="35.23"),
                         400,

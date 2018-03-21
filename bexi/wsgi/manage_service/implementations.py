@@ -42,7 +42,7 @@ def _get_os(storage=None):
     return operation_storage
 
 
-def get_all_assets(take, continuation):
+def get_all_assets(take, continuation=0):
     take = take
     start = continuation
     end = start + take
@@ -98,7 +98,7 @@ def validate_address(address):
 def is_valid_address(address, bitshares_instance=None):
     try:
         split = split_unique_address(address)
-        if not split.get("customer_id"):
+        if split.get("customer_id") is None:
             return False
         else:
             Account(split["account_id"], bitshares_instance=bitshares_instance)
@@ -121,7 +121,7 @@ def unobserve_address(address):
         raise AccountDoesNotExistsException()
 
 
-def get_balances(take, continuation):
+def get_balances(take, continuation=0):
     take = take
     start = continuation
     end = start + take
@@ -151,6 +151,10 @@ def get_balances(take, continuation):
 
 
 def get_address_history_from(address, take, after_hash=None):
+    return _get_from_history(address, take, "to", after_hash)
+
+
+def _get_from_history(address, take, to_or_from, after_hash=None):
     if not is_valid_address(address):
         raise AccountDoesNotExistsException()
 
@@ -163,21 +167,22 @@ def get_address_history_from(address, take, after_hash=None):
     for operation in _get_os().get_operations_completed(
             filter_by={"customer_id": address["customer_id"]}):
         # deposit, thus from
-        if utils.is_exchange_account(operation["to"]):
-            all_operations.append({
-                "operationId": operation["incident_id"],
-                "timestamp": operation["timestamp"],
+        if utils.is_exchange_account(operation[to_or_from]):
+            add_op = {
+                "operationId": operation.get("incident_id", None),
+                "timestamp": operation.get("timestamp", None),
                 "fromAddress": get_from_address_from_operation(operation),
                 "toAddress": get_to_address_from_operation(operation),
                 "assetId": operation["amount_asset_id"],
                 "amount": str(operation["amount_value"]),
                 "hash": operation["chain_identifier"]
-            })
-            if operation["chain_identifier"] == after_hash:
-                afterTimestamp = utils.string_to_date(operation["timestamp"])
+            }
+            all_operations.append(add_op)
+            if operation["chain_identifier"] == after_hash and add_op["timestamp"]:
+                afterTimestamp = utils.string_to_date(add_op["timestamp"])
 
     older = [op for op in all_operations if
-             afterTimestamp <=
+             op["timestamp"] and afterTimestamp <=
              utils.string_to_date(op["timestamp"])]
     older.sort(key=lambda x: utils.string_to_date(x["timestamp"]))
 
@@ -187,39 +192,7 @@ def get_address_history_from(address, take, after_hash=None):
 
 
 def get_address_history_to(address, take, after_hash=None):
-    if not is_valid_address(address):
-        raise AccountDoesNotExistsException()
-
-    take = int(take)
-
-    all_operations = []
-
-    address = split_unique_address(address)
-    afterTimestamp = datetime.fromtimestamp(0)
-    for operation in _get_os().get_operations_completed(
-            filter_by={"customer_id": address["customer_id"]}):
-        # deposit, thus from
-        if utils.is_exchange_account(operation["from"]):
-            all_operations.append({
-                "operationId": operation["incident_id"],
-                "timestamp": operation["timestamp"],
-                "fromAddress": get_from_address_from_operation(operation),
-                "toAddress": get_to_address_from_operation(operation),
-                "assetId": operation["amount_asset_id"],
-                "amount": str(operation["amount_value"]),
-                "hash": operation["chain_identifier"]
-            })
-            if operation["chain_identifier"] == after_hash:
-                afterTimestamp = utils.string_to_date(operation["timestamp"])
-
-    older = [op for op in all_operations if
-             afterTimestamp <=
-             utils.string_to_date(op["timestamp"])]
-    older.sort(key=lambda x: utils.string_to_date(x["timestamp"]))
-
-    max_end = max(take, len(older))
-
-    return older[0:max_end]
+    return _get_from_history(address, take, "from", after_hash)
 
 
 @requires_blockchain
