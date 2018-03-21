@@ -151,7 +151,7 @@ def get_balances(take, continuation=0):
 
 
 def get_address_history_from(address, take, after_hash=None):
-    return _get_from_history(address, take, "to", after_hash)
+    return _get_from_history(address, take, "from", after_hash)
 
 
 def _get_from_history(address, take, to_or_from, after_hash=None):
@@ -192,7 +192,7 @@ def _get_from_history(address, take, to_or_from, after_hash=None):
 
 
 def get_address_history_to(address, take, after_hash=None):
-    return _get_from_history(address, take, "from", after_hash)
+    return _get_from_history(address, take, "to", after_hash)
 
 
 @requires_blockchain
@@ -259,7 +259,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         memo_plain = create_memo(fromAddress, incidentId)
     elif utils.is_exchange_account(from_account["id"]):
         # Withdrawal
-        memo_plain = create_memo(toAddress, incidentId)
+        memo_plain = create_memo(fromAddress, incidentId)
     elif utils.is_exchange_account(to_account["id"]):
         # Deposit
         memo_plain = create_memo(toAddress, incidentId)

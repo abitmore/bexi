@@ -23,7 +23,7 @@ def split_unique_address(address):
 def get_from_address_from_operation(operation):
     """ returns the from address of the given operation.
         if the from address is the exchange account,
-        the address contains the customer_id, otherwise NULL string
+        the address contains the customer_id, otherwise empty string
         is set
 
         :param operation: operation formatted for operation storage
@@ -32,13 +32,13 @@ def get_from_address_from_operation(operation):
     if utils.is_exchange_account(operation["from"]):
         return get_address_from_operation(operation)
     else:
-        return operation["from"] + DELIMITER + "NULL"
+        return operation["from"] + DELIMITER + ""
 
 
 def get_to_address_from_operation(operation):
     """ returns the to address of the given operation.
         if the to address is the exchange account,
-        the address contains the customer_id, otherwise NULL string
+        the address contains the customer_id, otherwise empty string
         is set
 
         :param operation: operation formatted for operation storage
@@ -47,7 +47,7 @@ def get_to_address_from_operation(operation):
     if utils.is_exchange_account(operation["to"]):
         return get_address_from_operation(operation)
     else:
-        return operation["to"] + DELIMITER + "NULL"
+        return operation["to"] + DELIMITER + ""
 
 
 def get_address_from_operation(operation):

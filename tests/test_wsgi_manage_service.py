@@ -260,7 +260,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         assert operation.get("block", None) is None
 
-    def test_get_address_history_from(self):
+    def test_get_address_history_to(self):
         transfer = self.get_completed_op()
         transfer["incident_id"] = "incident_id_1234"
         transfer["chain_identifier"] = "chainidentifier_1234"
@@ -268,14 +268,14 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["to"] = utils.get_exchange_account_id()
         implementations._get_os().insert_operation(transfer)
 
-        history = implementations.get_address_history_from(get_address_from_operation(transfer), 1, 0)
+        history = implementations.get_address_history_to(get_address_from_operation(transfer), 1, 0)
 
         self.assertEqual(
             history,
-            [{'operationId': 'incident_id_1234', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::NULL', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
+            [{'operationId': 'incident_id_1234', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
         )
 
-    def test_get_address_history_to(self):
+    def test_get_address_history_from(self):
         transfer = self.get_completed_op()
         transfer["incident_id"] = "incident_id_1235"
         transfer["chain_identifier"] = "chainidentifier_1235"
@@ -283,9 +283,9 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["from"] = utils.get_exchange_account_id()
         implementations._get_os().insert_operation(transfer)
 
-        history = implementations.get_address_history_to(get_address_from_operation(transfer), 1, 0)
+        history = implementations.get_address_history_from(get_address_from_operation(transfer), 1, 0)
 
         self.assertEqual(
             history,
-            [{'operationId': 'incident_id_1235', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::NULL', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'operationId': 'incident_id_1235', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )
