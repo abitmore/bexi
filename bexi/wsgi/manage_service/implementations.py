@@ -109,14 +109,14 @@ def is_valid_address(address, bitshares_instance=None):
 
 def observe_address(address):
     if is_valid_address(address):
-        _get_os().track_balance(address)
+        _get_os().track_address(address, "balance")
     else:
         raise AccountDoesNotExistsException()
 
 
 def unobserve_address(address):
     if is_valid_address(address):
-        _get_os().untrack_balance(address)
+        _get_os().untrack_address(address, "balance")
     else:
         raise AccountDoesNotExistsException()
 
@@ -411,3 +411,25 @@ def get_broadcasted_transaction(operationId):
 
 def delete_broadcasted_transaction(operationId):
     _get_os().delete_operation(operationId)
+
+
+def observe_address_history_from(address, track):
+    if is_valid_address(address):
+        if track:
+            _get_os().track_address(address, "history_from")
+        else:
+            _get_os().untrack_address(address, "history_from")
+    else:
+        raise AccountDoesNotExistsException()
+
+
+def observe_address_history_to(address, track):
+    if is_valid_address(address):
+        if track:
+            _get_os().track_address(address, "history_to")
+        else:
+            _get_os().untrack_address(address, "history_to")
+    else:
+        raise AccountDoesNotExistsException()
+
+

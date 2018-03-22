@@ -179,25 +179,32 @@ class IAddressOperationStorage(IOperationStorage):
     """
 
     @abstractmethod
-    def track_balance(self, address):
+    def track_address(self, address, usage):
         """
-        Tells the storage to return the balance of the adress
-        as default in :func:`interface.IAddressOperationStorage.get_balances`.
+        Tells the storage to track the given address for the given usage.
 
         :param adress: as is
         :type adress: string
+        :param usage: balance return the balance of the adress
+                      as default in :func:`interface.IAddressOperationStorage.get_balances`.
+               history_to history_from return return the transaction history of the adress, only for tracking purposes
+                                       right now
+        :type usage: string
         :raises: AddressAlreadyTrackedException: if the address is already tracked
         :raises: OperationStorageLostException: any technical problems contacting the storage
         """
 
     @abstractmethod
-    def untrack_balance(self, address):
+    def untrack_address(self, address, usage):
         """
-        Tells the storage to stop returning the balance of this address
-        as default in :func:`interface.IAddressOperationStorage.get_balances`.
+        Tells the storage to untrack the given address for the given usage.
 
         :param address: as is
         :type address: string
+        :param usage: balance stop returning the balance of this address
+                              as default in :func:`interface.IAddressOperationStorage.get_balances`.
+               history_to history_from return return the transaction history of the adress, only for tracking purposes
+                                       right now
         :raises: AddressNotTrackedException: if the address was not tracked at all
         :raises: OperationStorageLostException: any technical problems contacting the storage
         """

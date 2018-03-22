@@ -166,13 +166,13 @@ class TestMongoOperationStorage(ATestOperationStorage):
         address2 = create_unique_address("user_2")
         addr2s = split_unique_address(address2)
 
-        self.storage.track_balance(address1)
+        self.storage.track_address(address1)
 
         self.assertRaises(AddressAlreadyTrackedException,
-                          self.storage.track_balance,
+                          self.storage.track_address,
                           address1)
 
-        self.storage.track_balance(address2)
+        self.storage.track_address(address2)
 
         filled_operation = self.get_completed_op()
         filled_operation["to"] = addr2s["account_id"]
@@ -187,10 +187,10 @@ class TestMongoOperationStorage(ATestOperationStorage):
         assert address2 in balances.keys()
         assert balances[address2]["TEST"] == 1234
 
-        self.storage.untrack_balance(address1)
+        self.storage.untrack_address(address1)
 
         self.assertRaises(AddressNotTrackedException,
-                          self.storage.untrack_balance,
+                          self.storage.untrack_address,
                           address1)
 
     def test_last_head_blockincrement(self):

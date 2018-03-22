@@ -3,19 +3,18 @@
     put into :mod:`.implementations`.
 """
 
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify
 import json
+from bitshares.exceptions import AccountDoesNotExistsException
+from json.decoder import JSONDecodeError
 
 from . import implementations
-from ..flask_setup import ErrorCodeException
+from ..flask_setup import custom_abort
 from ...operation_storage.interface import AddressAlreadyTrackedException,\
     AddressNotTrackedException, DuplicateOperationException,\
     OperationNotFoundException
 from .implementations import AssetNotFoundException, NotEnoughBalanceException,\
     AmountTooSmallException, TransactionExpiredException
-from bitsharesapi.exceptions import UnhandledRPCError
-from bitshares.exceptions import AccountDoesNotExistsException
-from json.decoder import JSONDecodeError
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -30,13 +29,13 @@ def _get(parameter_name, default_value=None):
 def _get_take():
     take = request.args.get("take", None)
     if not take:
-        abort(400)
+        custom_abort(400)
     if type(take) != int and type(take) != str:
-        abort(400)
+        custom_abort(400)
     try:
         return int(take)
     except ValueError:
-        abort(400)
+        custom_abort(400)
 
 
 def _get_continuation():
@@ -44,11 +43,11 @@ def _get_continuation():
     continuation = request.args.get("continuation", None)
     if continuation:
         if type(continuation) != int and type(continuation) != str:
-            abort(400)
+            custom_abort(400)
         try:
             return int(continuation)
         except ValueError:
-            abort(400)
+            custom_abort(400)
     else:
         return 0
 
@@ -61,14 +60,7 @@ def _body(parameter_name, default_value=None):
                 lookup = json.loads(request.data)
         return lookup.get(parameter_name, default_value)
     except JSONDecodeError:
-        abort(400)
-
-
-def _abort(http_status_code, error_code=None):
-    if error_code:
-        raise ErrorCodeException(http_status_code, error_code)
-    else:
-        abort(http_status_code)
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/capabilities")
@@ -93,7 +85,7 @@ def get_all_assets():
             implementations.get_all_assets(_get_take(), _get_continuation())
         )
     except ValueError:
-        abort(400)
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/assets/<assetId>")
@@ -145,9 +137,9 @@ def observe_address(address):
         )
     except AddressAlreadyTrackedException:
         # controlled abort, no logging
-        abort(409)
+        custom_abort(409)
     except AccountDoesNotExistsException:
-        abort(400)
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/balances/<address>/observation", methods=["DELETE"])
@@ -168,7 +160,7 @@ def unobserve_address(address):
         # controlled abort, no logging
         return jsonify(data=[]), 204
     except AccountDoesNotExistsException:
-        abort(400)
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/balances", methods=["GET"])
@@ -205,13 +197,13 @@ def build_transaction():
                 _body("includeFee")
             ))
     except AmountTooSmallException:
-        _abort(400, "amountIsTooSmall")
+        custom_abort(400, "amountIsTooSmall")
     except NotEnoughBalanceException:
-        _abort(400, "notEnoughBalance")
+        custom_abort(400, "notEnoughBalance")
     except AssetNotFoundException:
-        _abort(400, "assetNotFound")
+        custom_abort(400, "assetNotFound")
     except AccountDoesNotExistsException:
-        abort(400)
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast", methods=["POST"])
@@ -230,13 +222,13 @@ def broadcast_transaction():
             implementations.broadcast_transaction(_body("signedTransaction"))
         )
     except NotEnoughBalanceException:
-        _abort(400, "notEnoughBalance")
+        custom_abort(400, "notEnoughBalance")
     except DuplicateOperationException:
-        abort(409)
+        custom_abort(409)
     except TransactionExpiredException:
-        _abort(400, "transactionExpired")
+        custom_abort(400, "transactionExpired")
     except JSONDecodeError:
-        abort(400)
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast/single/<operationId>", methods=["GET"])
@@ -267,7 +259,7 @@ def delete_broadcasted_transaction(operationId=None):
     """
     try:
         if not operationId:
-            abort(500)
+            custom_abort(500)
         return jsonify(
             implementations.delete_broadcasted_transaction(operationId)
         )
@@ -276,8 +268,8 @@ def delete_broadcasted_transaction(operationId=None):
         return jsonify(data=[]), 204
 
 
-@blueprint_manage_service.route("/api/transactions/history/from/<address>/observation", methods=["POST", "DELETE"])
-def observe_address_history_from(address):  # @UnusedVariable
+@blueprint_manage_service.route("/api/transactions/history/from/<address>/observation", methods=["POST"])
+def observe_address_history_from(address):
     """
     [POST] /api/transactions/history/from/{address}/observation
 
@@ -287,14 +279,37 @@ def observe_address_history_from(address):  # @UnusedVariable
 
     """
     try:
-        implementations.is_valid_address(address)
-        return jsonify([])
+        return jsonify(
+            implementations.observe_address_history_from(address, True)
+        )
     except AccountDoesNotExistsException:
-        abort(400)
+        custom_abort(400)
+    except AddressAlreadyTrackedException:
+        custom_abort(409)
 
 
-@blueprint_manage_service.route("/api/transactions/history/to/<address>/observation", methods=["POST", "DELETE"])
-def observe_address_history_to(address):  # @UnusedVariable
+@blueprint_manage_service.route("/api/transactions/history/from/<address>/observation", methods=["DELETE"])
+def unobserve_address_history_from(address):
+    """
+    [DELETE] /api/transactions/history/from/{address}/observation
+
+    :param address: the address whose history should be deleted
+    :type address: string
+    :raises 204 No content: transactions from the address are not observed.
+
+    """
+    try:
+        return jsonify(
+            implementations.observe_address_history_from(address, False)
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(400)
+    except AddressNotTrackedException:
+        return jsonify(data=[]), 204
+
+
+@blueprint_manage_service.route("/api/transactions/history/to/<address>/observation", methods=["POST"])
+def observe_address_history_to(address):
     """
     [POST] /api/transactions/history/to/{address}/observation
 
@@ -304,10 +319,33 @@ def observe_address_history_to(address):  # @UnusedVariable
 
     """
     try:
-        implementations.is_valid_address(address)
-        return jsonify([])
+        return jsonify(
+            implementations.observe_address_history_to(address, True)
+        )
     except AccountDoesNotExistsException:
-        abort(400)
+        custom_abort(400)
+    except AddressAlreadyTrackedException:
+        custom_abort(409)
+
+
+@blueprint_manage_service.route("/api/transactions/history/to/<address>/observation", methods=["DELETE"])
+def unobserve_address_history_to(address):
+    """
+    [DELETE] /api/transactions/history/to/{address}/observation
+
+    :param address: the address whose history should be observed
+    :type address: string
+    :raises 204 No content: transactions from the address are not observed.
+
+    """
+    try:
+        return jsonify(
+            implementations.observe_address_history_to(address, False)
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(400)
+    except AddressNotTrackedException:
+        return jsonify(data=[]), 204
 
 
 @blueprint_manage_service.route("/api/transactions/history/from/<address>", methods=["GET"])

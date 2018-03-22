@@ -1,4 +1,4 @@
-bitshares>=0.1.10
+bitshares>=0.1.12
 pymongo
 pyyaml
 flask

@@ -70,12 +70,12 @@ class MongoDBOperationsStorage(BasicOperationStorage):
                 "$jsonSchema": {
                     "type": "object",
                     "required": ["address",
-                                 "type"
+                                 "usage"
                                  ],
                     "properties": {
                         "address": {"type": "string"},
-                        "type": {"type": "string",
-                                 "enum": ["tracked"]},
+                        "usage": {"type": "string",
+                                  "enum": ["balance", "history_from", "history_to"]},
                     }
                 }
             })
@@ -115,23 +115,23 @@ class MongoDBOperationsStorage(BasicOperationStorage):
         return {"chain_identifier": operation["chain_identifier"]}
 
     @retry_auto_reconnect
-    def track_balance(self, address):
+    def track_address(self, address, usage="balance"):
         split = split_unique_address(address)
         if not split.get("customer_id") or not split.get("account_id"):
             raise OperationStorageException()
         try:
             self._address_storage.insert_one(
                 {"address": address,
-                 "type": "tracked"}
+                 "usage": usage}
             )
         except pymongo.errors.DuplicateKeyError:
             raise AddressAlreadyTrackedException
 
     @retry_auto_reconnect
-    def untrack_balance(self, address):
+    def untrack_address(self, address, usage="balance"):
         result = self._address_storage.delete_one(
             {"address": address,
-             "type": "tracked"}
+             "usage": usage}
         )
         if result.deleted_count == 0:
             raise AddressNotTrackedException()
@@ -224,7 +224,7 @@ class MongoDBOperationsStorage(BasicOperationStorage):
 
         if not addresses:
             addresses = [x["address"] for x in
-                         list(self._address_storage.find({"type": "tracked"}))]
+                         list(self._address_storage.find({"usage": "balance"}))]
 
         if type(addresses) == str:
             addresses = [addresses]

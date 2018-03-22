@@ -34,6 +34,13 @@ class ErrorCodeException(Exception):
         self.http_status_code = http_status_code
 
 
+def custom_abort(http_status_code, error_code=None):
+    if error_code:
+        raise ErrorCodeException(http_status_code, error_code)
+    else:
+        raise ErrorCodeException(http_status_code, "unknown")
+
+
 def get_error_response(ex):
     """ Returns a unified json object as reponse for the failed request.
         If the causing exception is a ErrorCodeException, the error_code is added
@@ -66,8 +73,6 @@ def handle_exception(e):
 
     """
     code = 500
-    if isinstance(e, HTTPException):
-        code = e.code
     if isinstance(e, ErrorCodeException):
         code = e.http_status_code
     resp = jsonify(get_error_response(e))

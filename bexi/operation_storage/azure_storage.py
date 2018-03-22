@@ -127,27 +127,27 @@ class AzureOperationsStorage(BasicOperationStorage):
         return with_ck
 
     @retry_auto_reconnect
-    def track_balance(self, address):
+    def track_address(self, address, usage="balance"):
         split = split_unique_address(address)
         if not split.get("customer_id") or not split.get("account_id"):
             raise OperationStorageException()
         try:
             self._service.insert_entity(
                 self._azure_config["address_table"],
-                {"PartitionKey": "tracked",
+                {"PartitionKey": usage,
                  "RowKey": address,
                  "address": address,
-                 "type": "tracked"}
+                 "usage": usage}
             )
         except AzureConflictHttpError:
             raise AddressAlreadyTrackedException
 
     @retry_auto_reconnect
-    def untrack_balance(self, address):
+    def untrack_address(self, address, usage="balance"):
         try:
             self._service.delete_entity(
                 self._azure_config["address_table"],
-                "tracked",
+                usage,
                 address)
         except AzureMissingResourceHttpError:
             raise AddressNotTrackedException()
@@ -278,7 +278,7 @@ class AzureOperationsStorage(BasicOperationStorage):
         if not addresses:
             addresses = self._service.query_entities(
                 self._azure_config["address_table"],
-                "PartitionKey eq 'tracked'")
+                "PartitionKey eq 'balance'")
             addresses = [x["address"] for x in addresses]
 
         if type(addresses) == str:

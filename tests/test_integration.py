@@ -156,3 +156,21 @@ class TestIntegration(AFlaskTest):
         assert response.status_code == 200
 
         self.assertEqual(response.json["items"][0]["balance"], 10000)
+
+        toDW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressDW) + "?take=3")
+        assert toDW.status_code == 200
+        self.assertEqual(toDW.json,
+                         [{'amount': '110000', 'assetId': '1.3.0', 'fromAddress': addressEW, 'hash': toDW.json[0]['hash'], 'operationId': 'deposit', 'timestamp': toDW.json[0]['timestamp'], 'toAddress': addressDW}])
+
+        fromDW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressDW) + "?take=3")
+        assert fromDW.status_code == 200
+        assert fromDW.json == []
+
+        toHW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressHW) + "?take=3")
+        assert toHW.status_code == 200
+        assert toHW.json == []
+
+        fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressHW) + "?take=3")
+        assert fromHW.status_code == 200
+        self.assertEqual(fromHW.json,
+                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'operationId': 'withrawal', 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': addressEW}])
