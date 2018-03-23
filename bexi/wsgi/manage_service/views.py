@@ -86,6 +86,8 @@ def get_all_assets():
         )
     except ValueError:
         custom_abort(400)
+    except BadArgumentException:
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/assets/<assetId>")
@@ -168,9 +170,12 @@ def get_balances():
     """
     [GET] /api/balances?take=integer&[continuation=string]
     """
-    return jsonify(
-        implementations.get_balances(_get_take(), _get_continuation())
-    )
+    try:
+        return jsonify(
+            implementations.get_balances(_get_take(), _get_continuation())
+        )
+    except BadArgumentException:
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/single", methods=["POST"])
