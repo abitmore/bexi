@@ -55,6 +55,9 @@ def get_all_assets(take, continuation=0):
                 get_asset(all_assets_config[i]["asset_id"])
             )
 
+    if start > len(all_assets_config):
+        raise BadArgumentException()
+
     return {
         "continuation": end if end < len(all_assets_config) else None,
         "items": all_assets
@@ -70,6 +73,10 @@ class AmountTooSmallException(Exception):
 
 
 class NotEnoughBalanceException(Exception):
+    pass
+
+
+class BadArgumentException(Exception):
     pass
 
 
@@ -141,6 +148,9 @@ def get_balances(take, continuation=0):
                         "block": _get_os().get_last_head_block_num()
                     }
                 )
+
+    if start > len(all_balances):
+        raise BadArgumentException()
 
     max_end = max(end, len(all_balances))
 
