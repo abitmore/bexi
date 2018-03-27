@@ -204,3 +204,6 @@ def set_global_logger():
                         handlers=[trfh, sh])
 
     return [trfh, sh]
+
+
+Config.load("config_common.yaml")

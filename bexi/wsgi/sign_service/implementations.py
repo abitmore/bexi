@@ -14,7 +14,10 @@ def sign(tx, keys):
     """
     if type(tx) == str:
         tx = json.loads(tx)
-    if keys[0] == "keep_keys_private" and Config.get("bitshares", "keep_keys_private", True):
+    if (keys is None or
+            len(keys) == 0 or
+            keys[0] is None or
+            keys[0] == "keep_keys_private"):
         keys = [Config.get("bitshares", "exchange_account_active_key")]
 
     signedTransaction = sign_transaction(tx, keys)

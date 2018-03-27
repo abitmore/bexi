@@ -36,7 +36,7 @@ BitShares from the external exchange's point of view, please visit
 This library was created for the integration of BitShares into the Lykke exchange
 and is, thanks to Lykke, available freely as open source.
 
-Installation and quick guide are located within the readme.
+Installation and quick guide are located within the readme. 
 
 .. toctree::
    :maxdepth: 1
@@ -47,6 +47,13 @@ Installation and quick guide are located within the readme.
    :maxdepth: 1
 
    license
+
+A more detailed description hwo to configure the services can be found here
+
+.. toctree::
+   :maxdepth: 1
+
+   configuration 
 
 Package overview
 ================

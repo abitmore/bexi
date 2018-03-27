@@ -54,6 +54,7 @@ def create_sign_service_app(app=None):
     """
     if not app:
         app = create_common_app(create_basic_flask_app())
+        create_common_app(app)
 
     flask_setup.setup_blueprint(blueprint_sign_service)
     app.register_blueprint(blueprint_sign_service)
@@ -69,6 +70,7 @@ def create_manage_service_app(app=None):
     """
     if not app:
         app = create_common_app(create_basic_flask_app())
+        create_common_app(app)
 
     flask_setup.setup_blueprint(blueprint_manage_service)
     app.register_blueprint(blueprint_manage_service)
@@ -84,8 +86,33 @@ def create_blockchain_monitor_service_app(app=None):
     """
     if not app:
         app = create_basic_flask_app()
+        create_common_app(app)
 
     flask_setup.setup_blueprint(blueprint_blockchain_monitor_service)
     app.register_blueprint(blueprint_blockchain_monitor_service)
 
+    return app
+
+
+def get_sign_service_app(app=None):
+    Config.load(["config_bitshares_memo_keys.yaml",
+                 "config_bitshares_active_keys.yaml",
+                 "config_bitshares.yaml"])
+    create_sign_service_app(app)
+    return app
+
+
+def get_manage_service_app(app=None):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares_memo_keys.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+    create_manage_service_app(app)
+    return app
+
+
+def get_blockchain_monitor_service_app(app=None):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_operation_storage.yaml"])
+    create_blockchain_monitor_service_app(app)
     return app

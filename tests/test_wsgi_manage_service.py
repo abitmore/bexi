@@ -2,6 +2,7 @@ from tests.abstract_tests import ATestOperationStorage
 
 from bexi import utils
 
+from bexi.wsgi.manage_service.implementations import MemoMatchingFailedException
 from bexi.addresses import get_address_from_operation, create_unique_address, DELIMITER
 from bexi.wsgi.manage_service.views import implementations
 from bexi.wsgi.manage_service.implementations import AssetNotFoundException
@@ -9,6 +10,7 @@ from bexi.operation_storage.interface import AddressAlreadyTrackedException,\
     AddressNotTrackedException, OperationNotFoundException
 from bexi.wsgi import manage_service
 from bexi.wsgi import sign_service
+
 from flask import json
 from bitshares.exceptions import AccountDoesNotExistsException
 
@@ -190,6 +192,30 @@ class TestBlockchainApi(ATestOperationStorage):
         self.assertGreater(
             op["fee"]["amount"],
             0)
+
+    def test_build_transaction_wrong_memo(self):
+        from_id = "1.2.20139"
+        from_memo_key = utils.get_exchange_memo_key()
+
+        self.assertRaises(MemoMatchingFailedException,
+                          implementations.build_transaction,
+                          "Foobar",
+                          from_id + DELIMITER + "from_customer_id",
+                          None,
+                          utils.get_exchange_account_id() + DELIMITER + "to_customer_id",
+                          "1.3.0",
+                          10000,
+                          False)
+
+        self.assertRaises(MemoMatchingFailedException,
+                          implementations.build_transaction,
+                          "Foobar",
+                          from_id + DELIMITER + "from_customer_id",
+                          from_memo_key,
+                          utils.get_exchange_account_id() + DELIMITER + "to_customer_id",
+                          "1.3.0",
+                          10000,
+                          False)
 
     def test_build_transaction2(self):
         from_id = utils.get_exchange_account_id()

@@ -14,7 +14,7 @@ from ...operation_storage.interface import AddressAlreadyTrackedException,\
     AddressNotTrackedException, DuplicateOperationException,\
     OperationNotFoundException
 from .implementations import AssetNotFoundException, NotEnoughBalanceException,\
-    AmountTooSmallException, TransactionExpiredException
+    AmountTooSmallException, TransactionExpiredException, MemoMatchingFailedException
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -208,6 +208,8 @@ def build_transaction():
     except AssetNotFoundException:
         custom_abort(400, "assetNotFound")
     except AccountDoesNotExistsException:
+        custom_abort(400)
+    except MemoMatchingFailedException:
         custom_abort(400)
 
 

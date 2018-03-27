@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Manage service &#8212; BEXI - BitShares Exchange Integration 0.0.3 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bexi package" href="bexi.html" />
+    <link rel="prev" title="Licensing Information" href="license.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="manage-service">
+<h1>Manage service<a class="headerlink" href="#manage-service" title="Permalink to this headline">¶</a></h1>
+<p>The manage services is started as shown below</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py manage_service
+</pre></div>
+</div>
+<p>The manage service talks to the operation store and the blockchain. It tracks user balance and
+transaction history, and does build transaction. When building transaction the memo key of the
+sender account is required. This can be given via configuration</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">bitshares</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">exchange_account_memo_key</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;insert exchange account memo key&gt;</span>
+
+    <span class="l l-Scalar l-Scalar-Plain">connection</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">[</span><span class="nv">Test|Main</span><span class="p p-Indicator">]:</span>
+         <span class="l l-Scalar l-Scalar-Plain">keys</span><span class="p p-Indicator">:</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">&lt;insert any other required memo key, e.g. for test purposes&gt;</span>
+</pre></div>
+</div>
+<p>or given with the addressContext argument of the</p>
+<div class="highlight-html"><div class="highlight"><pre><span></span>[POST] /api/transactions
+</pre></div>
+</div>
+<p>post request. If the sender is the exchange account and no addressContext is given, its memo key
+is loaded from the configuration file entry exchange_account_memo_key, otherwise its expected to be in the connection.keys list.</p>
+</div>
+<div class="section" id="sign-service">
+<h1>Sign service<a class="headerlink" href="#sign-service" title="Permalink to this headline">¶</a></h1>
+<p>The sign services sole purpose is to create new addresses and to sign transaction.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py sign_service
+</pre></div>
+</div>
+<p>To sign the transaction it requires the active key of the sender account.
+This can be given via configuration</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">bitshares</span><span class="p p-Indicator">:</span>
+<span class="l l-Scalar l-Scalar-Plain">exchange_account_active_key</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;insert active key of exchange account here&gt;</span>
+    <span class="l l-Scalar l-Scalar-Plain">keep_keys_private</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">True|False</span><span class="p p-Indicator">]</span>
+    <span class="l l-Scalar l-Scalar-Plain">connection</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">[</span><span class="nv">Test|Main</span><span class="p p-Indicator">]:</span>
+         <span class="l l-Scalar l-Scalar-Plain">keys</span><span class="p p-Indicator">:</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">&lt;insert any other required active key, e.g. for test purposes&gt;</span>
+</pre></div>
+</div>
+<p>or given with the privateKeys argument of the</p>
+<div class="highlight-html"><div class="highlight"><pre><span></span>[POST] /api/sign
+</pre></div>
+</div>
+<p>post call. If the sender is the exchange account and no privateKeys is given or set to the
+keyword “keep_keys_private”, its active key is loaded from the configuration file entry
+bitshares.exchange_account_active_key, otherwise its expected to be in the connection.keys list.</p>
+<p>The configuration flag bitshares.keep_keys_private controls whether any keys are returned with the</p>
+<div class="highlight-html"><div class="highlight"><pre><span></span>[POST] /api/wallets
+</pre></div>
+</div>
+<p>post call. If the flag is set, no keys are returned (privateKey is set to “keep_keys_private”), otherwise
+the response contains the active and memo key of the exchange account, additionally to a new publicAddress</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">privateKey</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">bitshares.exchange_account_active_key</span>
+<span class="l l-Scalar l-Scalar-Plain">addressContext</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">bitshares.exchange_account_memo_key</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="blockchain-monitor">
+<h1>Blockchain monitor<a class="headerlink" href="#blockchain-monitor" title="Permalink to this headline">¶</a></h1>
+<p>The blockchain monitor monitors the blockchain for transactions involving the exchange account. Is is started
+like</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py blockchain_monitor
+</pre></div>
+</div>
+<p>To be able to read the memo messages of all those transfers it requires the memo key of the exchange account,
+which needs to be given in the configuration</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">bitshares</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">exchange_account_memo_key</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;insert exchange account memo key&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="blockchain-monitor-service">
+<h1>Blockchain monitor service<a class="headerlink" href="#blockchain-monitor-service" title="Permalink to this headline">¶</a></h1>
+<p>The blockchain monitor service simply provides a WSGI isalive call for administration purposes and is started
+like shown below</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python3 cli.py blockchain_monitor_service
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="license.html" title="previous chapter">Licensing Information</a></li>
+      <li>Next: <a href="bexi.html" title="next chapter">bexi package</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Blockchain Projects BV.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/configuration.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

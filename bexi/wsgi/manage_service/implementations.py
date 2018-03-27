@@ -11,7 +11,7 @@ from bitshares.memo import Memo
 from bitsharesbase import operations
 from bitshares.transactionbuilder import TransactionBuilder
 from bitshares.exceptions import AccountDoesNotExistsException,\
-    AssetDoesNotExistsException
+    AssetDoesNotExistsException, MissingKeyError
 
 from ...addresses import (
     split_unique_address,
@@ -81,6 +81,10 @@ class BadArgumentException(Exception):
 
 
 class TransactionExpiredException(Exception):
+    pass
+
+
+class MemoMatchingFailedException(Exception):
     pass
 
 
@@ -274,7 +278,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         # Deposit
         memo_plain = create_memo(toAddress, incidentId)
     else:
-        raise
+        raise Exception("No exchange account involved")
 
     try:
         # Construct amount
@@ -293,6 +297,10 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
     if not fromMemoWif:
         if from_address["account_id"] == Config.get("bitshares", "exchange_account_id"):
             fromMemoWif = Config.get("bitshares", "exchange_account_memo_key")
+        else:
+            # one of the keys already set in bitshares must be the matching memo key
+            if not bitshares_instance.wallet.getMemoKeyForAccount(from_address["account_id"]):
+                raise MemoMatchingFailedException()
 
     if fromMemoWif:
         bitshares_instance.wallet.setKeys(fromMemoWif)
@@ -302,7 +310,11 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         to_account=to_account,
         bitshares_instance=bitshares_instance
     )
-    tx = obtain_raw_tx()
+
+    try:
+        tx = obtain_raw_tx()
+    except MissingKeyError:
+        raise MemoMatchingFailedException()
 
     fee = Amount(tx["operations"][0][1]["fee"],
                  bitshares_instance=bitshares_instance)
