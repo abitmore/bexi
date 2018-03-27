@@ -4,7 +4,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from copy import deepcopy
 import io
-import urllib
+import urllib.request
 import collections
 import json
 
