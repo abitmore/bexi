@@ -26,7 +26,7 @@ def wsgi(host, port):
     port = port or config["port"]
 
     app = get_manage_service_app()
-    get_sign_service_app(app)
+    app = get_sign_service_app(app)
     app.logger.info("Starting " + config["name"] + " with manage and sign service ...")
     app.run(host=host, port=port, debug=True)
 

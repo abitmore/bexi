@@ -98,8 +98,7 @@ def get_sign_service_app(app=None):
     Config.load(["config_bitshares_memo_keys.yaml",
                  "config_bitshares_active_keys.yaml",
                  "config_bitshares.yaml"])
-    create_sign_service_app(app)
-    return app
+    return create_sign_service_app(app)
 
 
 def get_manage_service_app(app=None):
@@ -107,12 +106,10 @@ def get_manage_service_app(app=None):
                  "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
-    create_manage_service_app(app)
-    return app
+    return create_manage_service_app(app)
 
 
 def get_blockchain_monitor_service_app(app=None):
     Config.load(["config_bitshares_connection.yaml",
                  "config_operation_storage.yaml"])
-    create_blockchain_monitor_service_app(app)
-    return app
+    return create_blockchain_monitor_service_app(app)
