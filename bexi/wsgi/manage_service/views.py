@@ -14,7 +14,7 @@ from ...operation_storage.interface import AddressAlreadyTrackedException,\
     AddressNotTrackedException, DuplicateOperationException,\
     OperationNotFoundException
 from .implementations import AssetNotFoundException, NotEnoughBalanceException,\
-    AmountTooSmallException, TransactionExpiredException, MemoMatchingFailedException
+    AmountTooSmallException, TransactionExpiredException, MemoMatchingFailedException, BadArgumentException
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
