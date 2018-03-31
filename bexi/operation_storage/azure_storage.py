@@ -156,7 +156,7 @@ class AzureOperationsStorage(BasicOperationStorage):
         try:
             for variant in self._operation_varients:
                 operation = self._get_with_ck(variant, operation)
-                new_operation = operation.copy()
+                new_operation = self.get_operation(operation["incident_id"])
                 if status:
                     new_operation["status"] = status
                     new_operation = self._get_with_ck(variant, new_operation)
