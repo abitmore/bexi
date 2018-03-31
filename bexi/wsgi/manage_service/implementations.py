@@ -421,6 +421,9 @@ def get_broadcasted_transaction(operationId):
         "fee": str(operation["fee_value"]),
         "hash": operation["chain_identifier"]
     }
+    if r_op["state"] == "in_progress":
+        r_op["state"] = "inProgress"
+        
     if r_op["state"] == "failed":
         r_op["error"] = "An error occured while broadcasting the transaction"
         r_op["errorCode"] = operation["message"]
