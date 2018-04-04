@@ -1,6 +1,6 @@
 from tests.abstract_tests import ATestOperationStorage
 
-from bexi.operation_storage.interface import AddressAlreadyTrackedException,\
+from bexi.operation_storage.exceptions import AddressAlreadyTrackedException,\
     AddressNotTrackedException, NoBlockNumException, StatusInvalidException,\
     InvalidOperationException, OperationNotFoundException,\
     DuplicateOperationException

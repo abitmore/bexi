@@ -1,4 +1,4 @@
-from ..operation_storage.interface import DuplicateOperationException
+from ..operation_storage.exceptions import DuplicateOperationException
 from ..factory import get_operation_storage
 from ..connection import requires_blockchain
 from .. import Config
@@ -72,6 +72,12 @@ class BlockchainMonitor(object):
         # BitShares instance
         self.bitshares = bitshares_instance or shared_bitshares_instance()
 
+        # make sure the memo key is added to the instance
+        memo_key = Config.get("bitshares", "exchange_account_memo_key")
+        if not self.bitshares.wallet.created() or\
+                memo_key in self.bitshares.wallet.keys:
+            self.bitshares.wallet.setKeys(memo_key)
+
         # Get configuration
         self.config = Config.get_config()
 
@@ -132,7 +138,7 @@ class BlockchainMonitor(object):
         """
         for block in Blockchain(
             mode=self.watch_mode,
-            max_block_wait_repetition=10,
+            max_block_wait_repetition=12,
             bitshares_instance=self.bitshares
         ).blocks(
             start=self.start_block,

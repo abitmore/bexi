@@ -23,9 +23,12 @@ from ...connection import requires_blockchain
 from ... import Config, factory
 from ... import utils
 from ...operation_storage import operation_formatter
+from ...operation_storage.exceptions import OperationNotFoundException
+
 from bitsharesapi.exceptions import UnhandledRPCError
 import time
 from graphenebase import transactions
+from bitshares.wallet import Wallet
 
 
 operation_storage = None
@@ -176,21 +179,22 @@ def _get_from_history(address, take, to_or_from, after_hash=None):
 
     all_operations = []
 
-    address = split_unique_address(address)
+    address_split = split_unique_address(address)
     afterTimestamp = datetime.fromtimestamp(0)
     for operation in _get_os().get_operations_completed(
-            filter_by={"customer_id": address["customer_id"]}):
+            filter_by={"customer_id": address_split["customer_id"]}):
         # deposit, thus from
-        if utils.is_exchange_account(operation[to_or_from]):
-            add_op = {
-                "operationId": operation.get("incident_id", None),
-                "timestamp": operation.get("timestamp", None),
-                "fromAddress": get_from_address_from_operation(operation),
-                "toAddress": get_to_address_from_operation(operation),
-                "assetId": operation["amount_asset_id"],
-                "amount": str(operation["amount_value"]),
-                "hash": operation["chain_identifier"]
-            }
+        add_op = {
+            "operationId": operation.get("incident_id", None),
+            "timestamp": operation.get("timestamp", None),
+            "fromAddress": get_from_address_from_operation(operation),
+            "toAddress": get_to_address_from_operation(operation),
+            "assetId": operation["amount_asset_id"],
+            "amount": str(operation["amount_value"]),
+            "hash": operation["chain_identifier"]
+        }
+        if (to_or_from == "to" and address == add_op["toAddress"]) or\
+                (to_or_from == "from" and address == add_op["fromAddress"]):
             all_operations.append(add_op)
             if operation["chain_identifier"] == after_hash and add_op["timestamp"]:
                 afterTimestamp = utils.string_to_date(add_op["timestamp"])
@@ -226,6 +230,12 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
     """
 
     def obtain_raw_tx():
+#         if old_operation is None:
+        _memo = memo.encrypt(memo_plain)
+        _expiration = Config.get("bitshares", "transaction_expiration_in_sec", 60 * 60 * 24)  # 24 hours
+#         else:
+#             memo_encrypted = memo.encrypt(memo_plain)
+
         op = operations.Transfer(**{
             "fee": {
                 "amount": 0,
@@ -234,7 +244,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
             "from": from_account["id"],
             "to": to_account["id"],
             "amount": amount.json(),
-            "memo": memo.encrypt(memo_plain),
+            "memo": _memo,
             "prefix": bitshares_instance.prefix
         })
 
@@ -242,19 +252,26 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
             bitshares_instance=bitshares_instance
         )
         tx.appendOps(op)
-        tx.set_expiration(
-            Config.get("bitshares", "transaction_expiration_in_sec", 60 * 60 * 24)  # 24 hours
-        )
+        tx.set_expiration(_expiration)
 
         # Build the transaction, obtain fee to be paid
         tx.constructTx()
         return tx.json()
+
+    operation_formatter.validate_incident_id(incidentId)
 
     if not is_valid_address(fromAddress):
         raise AccountDoesNotExistsException()
 
     if not is_valid_address(toAddress):
         raise AccountDoesNotExistsException()
+
+#     # check if this was already built
+#     old_operation = None
+#     try:
+#         old_operation = _get_os().get_operation(incidentId)
+#     except OperationNotFoundException:
+#         pass
 
     # Decode addresses
     from_address = split_unique_address(fromAddress)
@@ -297,13 +314,13 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
     if not fromMemoWif:
         if from_address["account_id"] == Config.get("bitshares", "exchange_account_id"):
             fromMemoWif = Config.get("bitshares", "exchange_account_memo_key")
-        else:
-            # one of the keys already set in bitshares must be the matching memo key
-            if not bitshares_instance.wallet.getMemoKeyForAccount(from_address["account_id"]):
-                raise MemoMatchingFailedException()
 
     if fromMemoWif:
         bitshares_instance.wallet.setKeys(fromMemoWif)
+
+    # memo key of the account must be known!
+    if not from_account["options"]["memo_key"] in Wallet.keys:
+            raise MemoMatchingFailedException()
 
     memo = Memo(
         from_account=from_account,
@@ -318,7 +335,9 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
 
     fee = Amount(tx["operations"][0][1]["fee"],
                  bitshares_instance=bitshares_instance)
-    if includeFee:
+
+    # virtual internal transfers always do full amount
+    if includeFee and from_account != to_account:
         # Reduce fee from amount to transfer
         amount -= fee
         tx = obtain_raw_tx()
@@ -404,6 +423,7 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
             op = map_operation(tx, op_in_tx, operation)
             op["block_num"] = -1
+            op["fee_value"] = 0
             storage.flag_operation_completed(op)
         return {"chain_identifier": "virtual_transfer", "block_num": op["block_num"]}
     else:
@@ -423,7 +443,7 @@ def get_broadcasted_transaction(operationId):
     }
     if r_op["state"] == "in_progress":
         r_op["state"] = "inProgress"
-        
+
     if r_op["state"] == "failed":
         r_op["error"] = "An error occured while broadcasting the transaction"
         r_op["errorCode"] = operation["message"]

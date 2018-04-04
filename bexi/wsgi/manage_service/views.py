@@ -10,11 +10,21 @@ from json.decoder import JSONDecodeError
 
 from . import implementations
 from ..flask_setup import custom_abort
-from ...operation_storage.interface import AddressAlreadyTrackedException,\
-    AddressNotTrackedException, DuplicateOperationException,\
-    OperationNotFoundException
-from .implementations import AssetNotFoundException, NotEnoughBalanceException,\
-    AmountTooSmallException, TransactionExpiredException, MemoMatchingFailedException, BadArgumentException
+from ...operation_storage.exceptions import (
+    AddressAlreadyTrackedException,
+    AddressNotTrackedException,
+    DuplicateOperationException,
+    OperationNotFoundException,
+    InvalidOperationIdException
+)
+from .implementations import (
+    AssetNotFoundException,
+    NotEnoughBalanceException,
+    AmountTooSmallException,
+    TransactionExpiredException,
+    MemoMatchingFailedException,
+    BadArgumentException
+)
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -210,6 +220,8 @@ def build_transaction():
     except AccountDoesNotExistsException:
         custom_abort(400)
     except MemoMatchingFailedException:
+        custom_abort(400)
+    except InvalidOperationIdException:
         custom_abort(400)
 
 

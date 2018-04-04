@@ -1,9 +1,4 @@
 bitshares:
     customer_account_id: 1.2.20138
-    customer_account_active_key: "customer_account_active_key"
-    customer_account_memo_key: "customer_account_memo_key"
-        
-    connection:
-        Test:
-         keys:  # needs both exchange and customer account active key since config is overwritten
-            - "customer_account_memo_key" # customer account memo key
+    customer_account_active_key: 5HuuC1pbw5fsJFbTvR9VXbnv1qp9KSb3LpwUrhRLsUVgukGFu1G
+    customer_account_memo_key: 5HuuC1pbw5fsJFbTvR9VXbnv1qp9KSb3LpwUrhRLsUVgukGFu1G

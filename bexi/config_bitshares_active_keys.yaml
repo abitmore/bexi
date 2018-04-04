@@ -1,4 +1,4 @@
 bitshares:
-    exchange_account_active_key: "exchange_account_active_key"
+    exchange_account_active_key: 5KD3ZFrxVFJReHHcss8b2KkoccBJCTQCZy6HLfZ3TY5dkoAD27N
     
     keep_keys_private: True

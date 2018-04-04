@@ -6,7 +6,7 @@ from bexi.wsgi.manage_service.implementations import MemoMatchingFailedException
 from bexi.addresses import get_address_from_operation, create_unique_address, DELIMITER
 from bexi.wsgi.manage_service.views import implementations
 from bexi.wsgi.manage_service.implementations import AssetNotFoundException
-from bexi.operation_storage.interface import AddressAlreadyTrackedException,\
+from bexi.operation_storage.exceptions import AddressAlreadyTrackedException,\
     AddressNotTrackedException, OperationNotFoundException
 from bexi.wsgi import manage_service
 from bexi.wsgi import sign_service
@@ -113,7 +113,7 @@ class TestBlockchainApi(ATestOperationStorage):
         from_id = utils.get_exchange_account_id()
         from_memo_key = utils.get_exchange_memo_key()
         tx = implementations.build_transaction(
-            "Foobar",
+            "cbeea30e-2218-4405-9089-86d003e4df89",
             from_id + DELIMITER + "from_customer_id",
             from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
@@ -155,7 +155,7 @@ class TestBlockchainApi(ATestOperationStorage):
         from_id = utils.get_exchange_account_id()
         from_memo_key = utils.get_exchange_memo_key()
         tx = implementations.build_transaction(
-            "Foobar",
+            "cbeea30e-2218-4405-9089-86d003e4df88",
             from_id + DELIMITER + "from_customer_id",
             from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
@@ -199,7 +199,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertRaises(MemoMatchingFailedException,
                           implementations.build_transaction,
-                          "Foobar",
+                          "cbeea30e-2218-4405-9089-86d003e4df40",
                           from_id + DELIMITER + "from_customer_id",
                           None,
                           utils.get_exchange_account_id() + DELIMITER + "to_customer_id",
@@ -209,7 +209,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertRaises(MemoMatchingFailedException,
                           implementations.build_transaction,
-                          "Foobar",
+                          "cbeea30e-2218-4405-9089-86d003e4df30",
                           from_id + DELIMITER + "from_customer_id",
                           from_memo_key,
                           utils.get_exchange_account_id() + DELIMITER + "to_customer_id",
@@ -221,7 +221,7 @@ class TestBlockchainApi(ATestOperationStorage):
         from_id = utils.get_exchange_account_id()
         from_memo_key = utils.get_exchange_memo_key()
         tx = implementations.build_transaction(
-            "Foobar",
+            "cbeea30e-2218-4405-9089-86d003e4df86",
             from_id + DELIMITER + "from_customer_id",
             from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
@@ -243,7 +243,7 @@ class TestBlockchainApi(ATestOperationStorage):
         from_id = utils.get_exchange_account_id()
         from_memo_key = utils.get_exchange_memo_key()
         tx = manage_service.implementations.build_transaction(
-            "Foobar",
+            "cbeea30e-2218-4405-9089-86d003e4df84",
             from_id + DELIMITER + "from_customer_id",
             from_memo_key,
             self.get_customer_id() + DELIMITER + "to_customer_id",
@@ -263,14 +263,14 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_get_and_delete_broadcasted(self):
         completed = self.get_completed_op()
-        completed["incident_id"] = "some_incident"
+        completed["incident_id"] = "cbeea30e-2218-4405-9089-86d003e4df83"
         implementations._get_os().insert_operation(completed)
 
-        operation = implementations.get_broadcasted_transaction("some_incident")
+        operation = implementations.get_broadcasted_transaction("cbeea30e-2218-4405-9089-86d003e4df83")
 
         assert operation.get("block", None) is not None
 
-        implementations.delete_broadcasted_transaction("some_incident")
+        implementations.delete_broadcasted_transaction("cbeea30e-2218-4405-9089-86d003e4df83")
 
         self.assertRaises(
             OperationNotFoundException,
@@ -288,7 +288,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_get_address_history_to(self):
         transfer = self.get_completed_op()
-        transfer["incident_id"] = "incident_id_1234"
+        transfer["incident_id"] = "cbeea30e-2218-4405-9089-86d003e4df82"
         transfer["chain_identifier"] = "chainidentifier_1234"
         transfer["customer_id"] = "user_name_bla"
         transfer["to"] = utils.get_exchange_account_id()
@@ -298,12 +298,12 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'operationId': 'incident_id_1234', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
+            [{'operationId': 'cbeea30e-2218-4405-9089-86d003e4df82', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
         )
 
     def test_get_address_history_from(self):
         transfer = self.get_completed_op()
-        transfer["incident_id"] = "incident_id_1235"
+        transfer["incident_id"] = "cbeea30e-2218-4405-9089-86d003e4df81"
         transfer["chain_identifier"] = "chainidentifier_1235"
         transfer["customer_id"] = "user_name_bla"
         transfer["from"] = utils.get_exchange_account_id()
@@ -313,5 +313,5 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'operationId': 'incident_id_1235', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'operationId': 'cbeea30e-2218-4405-9089-86d003e4df81', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )

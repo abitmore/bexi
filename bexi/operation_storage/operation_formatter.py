@@ -1,13 +1,40 @@
 import datetime
 import json
-
-from .. import addresses
 import os
 import io
 import jsonschema
-import uuid
+import re
 
-import hashlib
+from .exceptions import InvalidOperationIdException
+
+from .. import addresses
+from .. import Config
+
+
+INCIDENT_ID_REGEX = None
+
+
+def validate_incident_id(incident_id):
+    """
+    Validates the given incident id against the configured regular expresssion
+    :param incident_id:
+    :type incident_id:
+    """
+    global INCIDENT_ID_REGEX
+    if INCIDENT_ID_REGEX is None:
+        INCIDENT_ID_REGEX = re.compile(
+            Config.get("operation_storage",
+                       "incident_id",
+                       "format",
+                       default="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}")
+        )
+    try:
+        if incident_id is None:
+            raise InvalidOperationIdException()
+        if INCIDENT_ID_REGEX.match(incident_id) is None:
+            raise InvalidOperationIdException()
+    except KeyError:
+        raise InvalidOperationIdException()
 
 
 def decode_operation(operation):

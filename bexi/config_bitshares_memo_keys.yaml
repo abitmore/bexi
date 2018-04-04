@@ -1,7 +1,2 @@
 bitshares:
-    exchange_account_memo_key: "exchange_account_memo_key"
-
-    connection:
-        Test:
-         keys:
-            - "exchange_account_memo_key"
+    exchange_account_memo_key: 5JCHqyxngCFX98wiexo6JPVwikBrWJ4toin9tSWcRws2YfbYQ6i

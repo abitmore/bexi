@@ -1,13 +1,10 @@
 from flask.helpers import url_for
-import json
 
 from tests.abstract_tests import AFlaskTest
-
-from bexi import Config, factory, utils
-from bexi.addresses import split_unique_address, create_unique_address
-from bexi.connection import requires_blockchain
-from bexi.blockchain_monitor import BlockchainMonitor
-from bitshares.bitshares import BitShares
+from bexi import Config
+from bexi.addresses import create_unique_address
+from time import sleep
+import json
 
 
 class TestIntegration(AFlaskTest):
@@ -18,159 +15,160 @@ class TestIntegration(AFlaskTest):
         # allow broadcasting in this test!
         Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = False
 
-    def test_is_alive(self):
-        response = self.client.get(url_for('Common.isalive'))
-
-        assert response.json ==\
-            {'env': None, 'isDebug': False, 'name': 'bexi', 'version': Config.get("wsgi", "version")}
-
-        # isDebug is false because the flask server is not started with debug=True
-
-    def test_wallet(self):
-        response = self.client.post(url_for('Blockchain.SignService.wallets'))
-
-        response = response.json
-
-        if Config.get("bitshares", "keep_keys_private", True):
-            self.assertEqual(response["privateKey"], "keep_keys_private")
+    def invalidate(self, url, code, response_json=None, response_json_contains=None, method=None, body=None):
+        if method is None:
+            method = self.client.get
+        if body:
+            response = method(url, data=json.dumps(body))
         else:
-            self.assertEqual(response["privateKey"], Config.get("bitshares", "exchange_account_active_key"))
+            response = method(url)
+        self.assertEqual(response.status_code, code)
+        if response_json is not None:
+            assert response.json == response_json
+        if response_json_contains is not None:
+            for key, value in response_json_contains.items():
+                assert response.json[key] == value
+        if response_json is not None or response_json_contains is not None:
+            return response.json
 
-        addrs = split_unique_address(response["publicAddress"])
+    def test_address_validity(self):
+        self.invalidate(url_for('Blockchain.Api.address_validity', address="!@$%^&*("),
+                        200,
+                        response_json={'isValid': False})
+        self.invalidate(url_for('Blockchain.Api.address_validity', address="1234"),
+                        200,
+                        response_json={'isValid': False})
 
-        self.assertEqual(addrs["account_id"], Config.get("bitshares", "exchange_account_id"))
+    def test_operationid_validity(self):
+        build_transaction = {"operationId": "b8bddab8-fb2c-4d98-afa8-49ffdc19863d",
+                             "fromAddress": "1.2.20407:::06eea045-43ee-4cca-a19d-1356abc2b70e",
+                             "toAddress": "1.2.20477:::e9de0223-029d-4502-acfd-92f1808c490e",
+                             "assetId": "1.3.0",
+                             "amount": "20000001",
+                             "includeFee": False,
+                             "fromAddressContext": "5KJBVnJaiYhVq7x3mF47f5xd6RUisnqjWCdc5fx9uhWSDdrd1MR"}
+        build_transaction["operationId"] = None
+        self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                        400,
+                        body=build_transaction,
+                        method=self.client.post)
+        build_transaction["operationId"] = "!@%^&*("
+        self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                        400,
+                        body=build_transaction,
+                        method=self.client.post)
+        build_transaction["operationId"] = "111222333"
+        self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                        400,
+                        body=build_transaction,
+                        method=self.client.post)
+        build_transaction["operationId"] = "testId"
+        self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                        400,
+                        body=build_transaction,
+                        method=self.client.post)
 
-        self.assertEqual(len(addrs["customer_id"]), 36)
+    def test_get_asset(self):
+        response = self.client.get(url_for('Blockchain.Api.get_asset', assetId="1.3.0"))
+        assert response.json == {'accuracy': 5, 'address': 'None', 'assetId': '1.3.0', 'name': 'BTS'}
 
-    @requires_blockchain
-    def test_track_balance(self, bitshares_instance=None):
-        addressDW = self.client.post(url_for('Blockchain.SignService.wallets')).json["publicAddress"]
+        self.invalidate(url_for('Blockchain.Api.get_asset', assetId="!@&*("),
+                        204)
 
-        addressEW = create_unique_address(self.get_customer_id(), "")
+        self.invalidate(url_for('Blockchain.Api.get_asset', assetId="1234"),
+                        204)
 
-        addressHW = self.client.post(url_for('Blockchain.SignService.wallets')).json["publicAddress"]
+    def test_get_assets(self):
+        response = self.client.get(url_for('Blockchain.Api.get_all_assets', take="2"))
+        assert response.json == {'continuation': 2, 'items': [{'accuracy': 5, 'address': 'None', 'assetId': '1.3.0', 'name': 'BTS'}, {'accuracy': 4, 'address': 'None', 'assetId': '1.3.121', 'name': 'USD'}]}
 
-        customer_id = split_unique_address(addressDW)["customer_id"]
+        response = self.client.get(url_for('Blockchain.Api.get_all_assets', take="2", continuation="2"))
+        assert response.json == {'continuation': None, 'items': [{'accuracy': 4, 'address': 'None', 'assetId': '1.3.120', 'name': 'EUR'}]}
 
-        response = self.client.get(url_for('Blockchain.Api.address_validity', address=addressDW))
-        assert response.status_code == 200
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take="!@*()"),
+                        400)
 
-        response = self.client.post(url_for('Blockchain.Api.observe_address', address=addressDW))
-        assert response.status_code == 200
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take="35.23"),
+                        400)
 
-        response = self.client.post(url_for('Blockchain.Api.observe_address', address=addressHW))
-        assert response.status_code == 200
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take="35,23"),
+                        400)
 
-        def build_sign_and_broadcast(op, memo_key, active_key):
-            op["fromAddressContext"] = memo_key
-            transaction = self.client.post(url_for('Blockchain.Api.build_transaction'),
-                                           data=json.dumps(op))
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take=""),
+                        400)
 
-            assert transaction.status_code == 200
+        self.invalidate(url_for('Blockchain.Api.get_all_assets', take=None),
+                        400)
 
-            sign_transaction = {
-                "transactionContext": transaction.json["transactionContext"],
-                "privateKeys": [active_key]
-            }
-            signed_transaction = self.client.post(url_for('Blockchain.SignService.sign'),
-                                                  data=json.dumps(sign_transaction))
-            broadcast_transaction = {
-                "operationId": op["operationId"],
-                "signedTransaction": signed_transaction.json["signedTransaction"]
-            }
-            broadcast = self.client.post(url_for('Blockchain.Api.broadcast_transaction'),
-                                         data=json.dumps(broadcast_transaction))
-            assert broadcast.status_code == 200
+    def test_observe_address(self):
+        self.invalidate(url_for('Blockchain.Api.observe_address', address="35.23"),
+                        400,
+                        method=self.client.post)
 
-            return broadcast.json["block_num"]
+    def test_unobserve_address(self):
+        self.invalidate(url_for('Blockchain.Api.unobserve_address', address="35.23"),
+                        400,
+                        method=self.client.delete)
 
-        def flag_completed(block_num, key):
-            network = Config.get("network_type")
-            connection = Config.get("bitshares", "connection", network)
-            connection["keys"] = key
-            instance = BitShares(**connection)
+    def test_get_balances(self):
+        self.invalidate(url_for('Blockchain.Api.get_balances', take="!@*()"),
+                        400)
 
-            store = factory.get_operation_storage(purge=False)
-            irr = instance.rpc.get_dynamic_global_properties().get("last_irreversible_block_num")
-            head = instance.rpc.get_dynamic_global_properties().get("head_block_number")
+        self.invalidate(url_for('Blockchain.Api.get_balances', take="35.23"),
+                        400)
 
-            print("Blockchain Monitor: Looking for block " + str(block_num), ", current head=" + str(head) + ", irreversible=" + str(irr))
+    def test_build_transaction(self):
+        self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                        400,
+                        method=self.client.post)
 
-            monitor = BlockchainMonitor(
-                storage=store,
-                bitshares_instance=instance)
-            monitor.start_block = block_num - 1
-            monitor.stop_block = block_num + 1
-            monitor.listen()
+    def test_build_transaction_double(self):
+        build_transaction = {"operationId": "b8bddab8-fb2c-4d98-afa8-49ffdc19863d",
+                             "fromAddress": self.get_customer_id() + ":::" + "06eea045-43ee-4cca-a19d-1356abc2b70e",
+                             "toAddress": "1.2.20137:::e9de0223-029d-4502-acfd-92f1808c490e",
+                             "assetId": "1.3.0",
+                             "amount": "20000001",
+                             "includeFee": False,
+                             "fromAddressContext": self.get_customer_memo_key()}
+        answer1 = self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                                  200,
+                                  method=self.client.post,
+                                  body=build_transaction)
+        sleep(1)
+        answer2 = self.invalidate(url_for('Blockchain.Api.build_transaction'),
+                                  200,
+                                  method=self.client.post,
+                                  body=build_transaction)
+        self.maxDiff = None
+        self.assertEqual(answer1, answer2)
 
-        block_num = build_sign_and_broadcast(
-            {
-                "operationId": "deposit",
-                "fromAddress": addressEW,
-                "toAddress": addressDW,
-                "assetId": "1.3.0",
-                "amount": 110000,
-                "includeFee": False
-            },
-            self.get_customer_memo_key(),
-            self.get_customer_active_key()
-        )
-        flag_completed(block_num, utils.get_exchange_memo_key())
+    def test_history(self):
+        address = create_unique_address(self.get_customer_id())
+        self.client.post(url_for('Blockchain.Api.observe_address_history_from', address=address))
+        self.invalidate(url_for('Blockchain.Api.observe_address_history_from', address=address),
+                        409,
+                        method=self.client.post,
+                        response_json_contains={"errorCode": "unknown"})
 
-        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=1")
-        assert response.status_code == 200
-        self.assertEqual(response.json["items"][0]["balance"], 110000)
+        self.client.delete(url_for('Blockchain.Api.unobserve_address_history_from', address=address))
+        self.invalidate(url_for('Blockchain.Api.unobserve_address_history_from', address=address),
+                        204,
+                        method=self.client.delete)
 
-        block_num = build_sign_and_broadcast(
-            {
-                "operationId": "DWtoHW",
-                "fromAddress": addressDW,
-                "toAddress": addressHW,
-                "assetId": "1.3.0",
-                "amount": 100000,
-                "includeFee": False
-            },
-            utils.get_exchange_memo_key(),
-            utils.get_exchange_active_key()
-        )
+        self.client.post(url_for('Blockchain.Api.observe_address_history_to', address=address))
+        self.invalidate(url_for('Blockchain.Api.observe_address_history_to', address=address),
+                        409,
+                        method=self.client.post,
+                        response_json_contains={"errorCode": "unknown"})
 
-        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=1")
-        assert response.status_code == 200
-        self.assertEqual(response.json["items"][0]["balance"], 10000)
+        self.client.delete(url_for('Blockchain.Api.unobserve_address_history_to', address=address))
+        self.invalidate(url_for('Blockchain.Api.unobserve_address_history_to', address=address),
+                        204,
+                        method=self.client.delete)
 
-        block_num = build_sign_and_broadcast(
-            {
-                "operationId": "withrawal",
-                "fromAddress": addressHW,
-                "toAddress": create_unique_address(self.get_customer_id(), ""),
-                "assetId": "1.3.0",
-                "amount": 100000,
-                "includeFee": False
-            },
-            utils.get_exchange_memo_key(),
-            utils.get_exchange_active_key()
-        )
-        flag_completed(block_num, self.get_customer_memo_key())
+    def test_broadcast_transaction(self):
+        self.invalidate(url_for('Blockchain.Api.broadcast_transaction'),
+                        400,
+                        method=self.client.post,
+                        body={"operationId": "adfd63e4-c362-4d38-b90e-cd0e0aec3762", "signedTransaction": "9bd781d436694c57b77e31274f764d60"})
 
-        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=1")
-        assert response.status_code == 200
-
-        self.assertEqual(response.json["items"][0]["balance"], 10000)
-
-        toDW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressDW) + "?take=3")
-        assert toDW.status_code == 200
-        self.assertEqual(toDW.json,
-                         [{'amount': '110000', 'assetId': '1.3.0', 'fromAddress': addressEW, 'hash': toDW.json[0]['hash'], 'operationId': 'deposit', 'timestamp': toDW.json[0]['timestamp'], 'toAddress': addressDW}])
-
-        fromDW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressDW) + "?take=3")
-        assert fromDW.status_code == 200
-        assert fromDW.json == []
-
-        toHW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressHW) + "?take=3")
-        assert toHW.status_code == 200
-        assert toHW.json == []
-
-        fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressHW) + "?take=3")
-        assert fromHW.status_code == 200
-        self.assertEqual(fromHW.json,
-                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'operationId': 'withrawal', 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': addressEW}])

@@ -1,49 +1,12 @@
 from abc import ABC, abstractmethod
+import time
+
+from .exceptions import OperationStorageLostException,StatusInvalidException,\
+    InvalidOperationException, NoBlockNumException
+
 from ..operation_storage import operation_formatter
 from ..utils import date_to_string
 from .. import Config
-import time
-
-
-class OperationStorageException(Exception):
-    """
-    General purpose exception for the interface.
-    Any and all exceptions thrown by implementations must be
-    of this class
-    """
-    pass
-
-
-class OperationStorageLostException(OperationStorageException):
-    pass
-
-
-class AddressAlreadyTrackedException(OperationStorageException):
-    pass
-
-
-class AddressNotTrackedException(OperationStorageException):
-    pass
-
-
-class StatusInvalidException(OperationStorageException):
-    pass
-
-
-class NoBlockNumException(OperationStorageException):
-    pass
-
-
-class InvalidOperationException(OperationStorageException):
-    pass
-
-
-class OperationNotFoundException(OperationStorageException):
-    pass
-
-
-class DuplicateOperationException(OperationNotFoundException):
-    pass
 
 
 class IOperationStorage(ABC):

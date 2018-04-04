@@ -5,7 +5,8 @@ from pymongo import MongoClient
 from ..addresses import split_unique_address
 from .interface import (
     retry_auto_reconnect,
-    BasicOperationStorage,
+    BasicOperationStorage)
+from .exceptions import (
     AddressNotTrackedException,
     AddressAlreadyTrackedException,
     OperationNotFoundException,
@@ -243,6 +244,13 @@ class MongoDBOperationsStorage(BasicOperationStorage):
 
                     address_balances[address][asset_id] =\
                         balance - operation["amount_value"]
+
+                    # fee as well
+                    asset_id = operation["fee_asset_id"]
+                    balance = address_balances[address].get(asset_id, 0)
+
+                    address_balances[address][asset_id] =\
+                        balance - operation["fee_value"]
                 elif addrs["account_id"] == operation["to"]:
                     # positive
                     asset_id = operation["amount_asset_id"]

@@ -44,7 +44,7 @@ def get_to_address_from_operation(operation):
         :param operation: operation formatted for operation storage
         :type operation: dict
     """
-    if utils.is_exchange_account(operation["to"]):
+    if utils.is_exchange_account(operation["to"]) and not utils.is_exchange_account(operation["from"]):
         return get_address_from_operation(operation)
     else:
         return operation["to"] + DELIMITER + ""
@@ -58,10 +58,12 @@ def get_address_from_operation(operation):
         :param operation: operation formatted for operation storage
         :type operation: dict
     """
-    if utils.is_exchange_account(operation["to"]):
-        return operation["to"] + DELIMITER + operation["customer_id"]
+    if utils.is_exchange_account(operation["from"]) and utils.is_exchange_account(operation["to"]):
+        return operation["from"] + DELIMITER + operation["customer_id"]
     elif utils.is_exchange_account(operation["from"]):
         return operation["from"] + DELIMITER + operation["customer_id"]
+    elif utils.is_exchange_account(operation["to"]):
+        return operation["to"] + DELIMITER + operation["customer_id"]
     raise Exception("No operaton concerning this exchange")
 
 

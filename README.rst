@@ -46,7 +46,7 @@ Install virtual environment and setup
 	$ source env/bin/activate
 	$ pip install -r requirements.txt
 
-Run all tests (tox installation required)
+Run all tests (requires a mongodb instance running at localhost:27017)
 
 .. code-block:: bash
 
