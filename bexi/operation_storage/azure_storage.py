@@ -1,8 +1,10 @@
 import time
 import collections
-from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError
+from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError,\
+    AzureHttpError
 from azure.cosmosdb.table.tableservice import TableService
 from urllib3.exceptions import NewConnectionError
+import hashlib
 
 from ..addresses import split_unique_address
 from .exceptions import (
@@ -15,6 +17,8 @@ from .exceptions import (
 from .interface import (
     retry_auto_reconnect,
     BasicOperationStorage)
+from bexi import Config
+import json
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -58,19 +62,24 @@ class AzureOperationsStorage(BasicOperationStorage):
         pprint(operation)
 
     def _create_address_storage(self, purge):
-        if purge:
-            try:
-                tablename = self._azure_config["address_table"]
-                for item in self._service.query_entities(tablename):
-                    self._service.delete_entity(
-                        tablename,
-                        item["PartitionKey"],
-                        item["RowKey"])
-            except AzureMissingResourceHttpError:
-                pass
-        while not self._service.exists(self._azure_config["address_table"]):
-            self._service.create_table(self._azure_config["address_table"])
-            time.sleep(0.1)
+        _varients = ["balance", "historyfrom", "historyto"]
+
+        for variant in _varients:
+            tablename = self._azure_config["address_table"] + variant
+            if purge:
+                try:
+                    for item in self._service.query_entities(tablename):
+                        self._service.delete_entity(
+                            tablename,
+                            item["PartitionKey"],
+                            item["RowKey"])
+                except AzureHttpError:
+                    pass
+                except AzureMissingResourceHttpError:
+                    pass
+            while not self._service.exists(tablename):
+                self._service.create_table(tablename)
+                time.sleep(0.1)
 
     def _create_status_storage(self, purge):
         if purge:
@@ -103,7 +112,7 @@ class AzureOperationsStorage(BasicOperationStorage):
                 "RowKey": op["chain_identifier"]
             },
             "incident": lambda op: {
-                "PartitionKey": op["incident_id"],
+                "PartitionKey": self._short_digit_hash(op["incident_id"]),
                 "RowKey": op["incident_id"]
             }
         }
@@ -127,6 +136,9 @@ class AzureOperationsStorage(BasicOperationStorage):
         with_ck.update(self._operation_prep[variant](with_ck))
         return with_ck
 
+    def _short_digit_hash(self, value):
+        return str(abs(hash(value)) % (10 ** Config.get("operation_storage", "short_hash_digits", 3)))
+
     @retry_auto_reconnect
     def track_address(self, address, usage="balance"):
         split = split_unique_address(address)
@@ -134,8 +146,8 @@ class AzureOperationsStorage(BasicOperationStorage):
             raise OperationStorageException()
         try:
             self._service.insert_entity(
-                self._azure_config["address_table"],
-                {"PartitionKey": usage,
+                self._azure_config["address_table"] + usage,
+                {"PartitionKey": self._short_digit_hash(address),
                  "RowKey": address,
                  "address": address,
                  "usage": usage}
@@ -147,8 +159,8 @@ class AzureOperationsStorage(BasicOperationStorage):
     def untrack_address(self, address, usage="balance"):
         try:
             self._service.delete_entity(
-                self._azure_config["address_table"],
-                usage,
+                self._azure_config["address_table"] + usage,
+                self._short_digit_hash(address),
                 address)
         except AzureMissingResourceHttpError:
             raise AddressNotTrackedException()
@@ -264,7 +276,7 @@ class AzureOperationsStorage(BasicOperationStorage):
         try:
             operation = self._service.get_entity(
                 self._operation_tables["incident"],
-                incident_id,
+                self._short_digit_hash(incident_id),
                 incident_id)
             operation.pop("PartitionKey")
             operation.pop("RowKey")
@@ -275,13 +287,21 @@ class AzureOperationsStorage(BasicOperationStorage):
         return operation
 
     @retry_auto_reconnect
-    def get_balances(self, addresses=None):
+    def get_balances(self, take, continuation=None, addresses=None):
         address_balances = collections.defaultdict(lambda: collections.defaultdict())
 
         if not addresses:
-            addresses = self._service.query_entities(
-                self._azure_config["address_table"],
-                "PartitionKey eq 'balance'")
+            if continuation:
+                addresses = self._service.query_entities(
+                    self._azure_config["address_table"] + "balance",
+                    num_results=take,
+                    marker=json.loads(continuation))
+            else:
+                addresses = self._service.query_entities(
+                    self._azure_config["address_table"] + "balance",
+                    num_results=take)
+            if addresses.next_marker:
+                address_balances["continuation"] = json.dumps(addresses.next_marker)
             addresses = [x["address"] for x in addresses]
 
         if type(addresses) == str:

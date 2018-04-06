@@ -32,7 +32,7 @@ def reset():
 def _get_configured_instance():
     network = Config.get("network_type")
     connection = Config.get("bitshares", "connection", network)
-    logging.getLogger(__name__).debug("BitShares connection initialized with ... \n" + pprint.pformat(connection))
+    logging.getLogger(__name__).debug("BitShares connection is initialized with with given config ... \n")
     return bitshares.BitShares(**connection)
 
 

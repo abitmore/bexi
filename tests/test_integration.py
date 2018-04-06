@@ -68,6 +68,15 @@ class TestIntegration(AFlaskTest):
                         body=build_transaction,
                         method=self.client.post)
 
+        self.invalidate(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="!@%^&*("),
+                        400)
+
+        self.invalidate(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="111222333"),
+                        400)
+
+        self.invalidate(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="testId"),
+                        400)
+
     def test_get_asset(self):
         response = self.client.get(url_for('Blockchain.Api.get_asset', assetId="1.3.0"))
         assert response.json == {'accuracy': 5, 'address': 'None', 'assetId': '1.3.0', 'name': 'BTS'}

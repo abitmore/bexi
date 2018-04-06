@@ -135,12 +135,10 @@ def unobserve_address(address):
         raise AccountDoesNotExistsException()
 
 
-def get_balances(take, continuation=0):
-    take = take
-    start = continuation
-    end = start + take
+def get_balances(take, continuation=None):
+    balancesDict = _get_os().get_balances(take, continuation)
 
-    balancesDict = _get_os().get_balances()
+    continuation = balancesDict.pop("continuation", None)
 
     all_accounts = sorted(balancesDict.keys())
     all_balances = []
@@ -156,14 +154,9 @@ def get_balances(take, continuation=0):
                     }
                 )
 
-    if start > len(all_balances):
-        raise BadArgumentException()
-
-    max_end = max(end, len(all_balances))
-
     return {
-        "continuation": end if end < len(all_balances) else None,
-        "items": all_balances[start:max_end]
+        "continuation": continuation,
+        "items": all_balances
     }
 
 
@@ -431,6 +424,8 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
 
 
 def get_broadcasted_transaction(operationId):
+    operation_formatter.validate_incident_id(operationId)
+
     operation = _get_os().get_operation(operationId)
 
     r_op = {
@@ -461,9 +456,9 @@ def delete_broadcasted_transaction(operationId):
 def observe_address_history_from(address, track):
     if is_valid_address(address):
         if track:
-            _get_os().track_address(address, "history_from")
+            _get_os().track_address(address, "historyfrom")
         else:
-            _get_os().untrack_address(address, "history_from")
+            _get_os().untrack_address(address, "historyfrom")
     else:
         raise AccountDoesNotExistsException()
 
@@ -471,9 +466,9 @@ def observe_address_history_from(address, track):
 def observe_address_history_to(address, track):
     if is_valid_address(address):
         if track:
-            _get_os().track_address(address, "history_to")
+            _get_os().track_address(address, "historyto")
         else:
-            _get_os().untrack_address(address, "history_to")
+            _get_os().untrack_address(address, "historyto")
     else:
         raise AccountDoesNotExistsException()
 

@@ -265,6 +265,8 @@ def get_broadcasted_transaction(operationId):
     except OperationNotFoundException:
         # controlled abort, no logging
         return jsonify(data=[]), 204
+    except InvalidOperationIdException:
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/transactions/broadcast", methods=["DELETE"])

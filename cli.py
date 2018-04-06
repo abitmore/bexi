@@ -9,6 +9,7 @@ from bexi import Config
 from bexi.connection import requires_blockchain
 from bexi.blockchain_monitor import BlockchainMonitor
 import logging
+import os
 
 config = Config.get("wsgi")
 
@@ -89,30 +90,36 @@ def start_block_monitor():
     monitor.listen()
 
 
-@main.command()
-def dump_configs():
-    get_sign_service_app()
-    Config.dump_current("config_sign_service.json")
-
-    Config.reset()
-
-    Config.load("config_common.yaml")
-    get_manage_service_app()
-    Config.dump_current("config_manage_service.json")
-
-    Config.reset()
-
-    Config.load("config_common.yaml")
-    load_blockchain_monitor_config()
-    Config.dump_current("config_blockchain_monitor.json")
-
-    Config.reset()
-
-    Config.load("config_common.yaml")
-    get_blockchain_monitor_service_app()
-    Config.dump_current("config_blockchain_monitor_service.json")
-
-    print("JSon configuration files for sign_service, manage_service and blockchain_monitor written to dump folder")
+# @main.command()
+# def yaml_to_json():
+#     os.environ["SettingsUrl"] = None
+#     os.environ["PrivateKey"] = None
+# 
+#     Config.reset()
+# 
+#     Config.load("config_common.yaml")
+#     get_sign_service_app()
+#     Config.dump_current("config_sign_service.json")
+# 
+#     Config.reset()
+# 
+#     Config.load("config_common.yaml")
+#     get_manage_service_app()
+#     Config.dump_current("config_manage_service.json")
+# 
+#     Config.reset()
+# 
+#     Config.load("config_common.yaml")
+#     load_blockchain_monitor_config()
+#     Config.dump_current("config_blockchain_monitor.json")
+# 
+#     Config.reset()
+# 
+#     Config.load("config_common.yaml")
+#     get_blockchain_monitor_service_app()
+#     Config.dump_current("config_blockchain_monitor_service.json")
+# 
+#     print("JSon configuration files for sign_service, manage_service and blockchain_monitor written to dump folder")
 
 
 main()

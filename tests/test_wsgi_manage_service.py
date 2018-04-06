@@ -91,23 +91,57 @@ class TestBlockchainApi(ATestOperationStorage):
 
         first = transfer.copy()
 
+        transfer["incident_id"] = "something_else"
         transfer["customer_id"] = "user_name_bla_2"
         transfer["chain_identifier"] = "24:25"
+        transfer["amount_value"] = 50000001
         implementations._get_os().insert_operation(transfer)
 
-        transfer["customer_id"] = "user_name_bla_2"
+        second = transfer.copy()
+
+        transfer["incident_id"] = "something_else_2"
+        transfer["customer_id"] = "user_name_bla_3"
+        transfer["chain_identifier"] = "24:24"
+        transfer["amount_value"] = 50000002
+        implementations._get_os().insert_operation(transfer)
+
+        third = transfer.copy()
+
+        transfer["incident_id"] = "something_else_3"
+        transfer["customer_id"] = "user_name_bla_3"
         transfer["chain_identifier"] = "24:26"
         transfer["from"] = utils.get_exchange_account_id()
         transfer["to"] = "some_dude"
+        transfer["fee_value"] = 0
         implementations._get_os().insert_operation(transfer)
 
         implementations.observe_address(get_address_from_operation(first))
-        implementations.observe_address(get_address_from_operation(transfer))
+        implementations.observe_address(get_address_from_operation(second))
+        implementations.observe_address(get_address_from_operation(third))
 
         implementations._get_os().set_last_head_block_num(1010)
 
-        assert implementations.get_balances(1, 0) ==\
-            {'continuation': None, 'items': [{'address': get_address_from_operation(first), 'assetId': '1.3.0', 'balance': 50000000, 'block': 1010}]}
+        result = implementations.get_balances(1)
+        self.assertEqual(
+            result['items'],
+            [{'address': get_address_from_operation(first), 'assetId': '1.3.0', 'balance': 50000000, 'block': 1010}]
+        )
+
+        result = implementations.get_balances(1, result["continuation"])
+
+        self.assertEqual(
+            result['items'],
+            [{'address': get_address_from_operation(second), 'assetId': '1.3.0', 'balance': 50000001, 'block': 1010}]
+        )
+
+        assert result["continuation"] is not None
+
+        result = implementations.get_balances(1, result["continuation"])
+
+        self.assertEqual(
+            result['items'],
+            []
+        )
 
     def test_build_transaction_not_enough_balance(self):
         from_id = utils.get_exchange_account_id()
@@ -275,7 +309,7 @@ class TestBlockchainApi(ATestOperationStorage):
         self.assertRaises(
             OperationNotFoundException,
             implementations.get_broadcasted_transaction,
-            "some_incident")
+            "cbeea30e-2218-4405-9089-86d003e4df81")
 
         in_progress = self.get_in_progress_op()
         in_progress["incident_id"] = "some_incident"

@@ -160,11 +160,11 @@ class Config(dict):
         Config.data = None
         Config.source = None
 
-    @staticmethod
-    def dump_current(file_name="config.json"):
-        output = os.path.join(Config.get_config()["dump_folder"], file_name)
-        with open(output, 'w') as outfile:
-            json.dump(Config.data, outfile)
+#     @staticmethod
+#     def dump_current(file_name="config.json"):
+#         output = os.path.join(Config.get_config()["dump_folder"], file_name)
+#         with open(output, 'w') as outfile:
+#             json.dump(Config.data, outfile)
 
     @staticmethod
     def _nested_update(d, u):
