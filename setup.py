@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
+import bexi
+
 from setuptools import setup, find_packages
 import sys
-
-__VERSION__ = '0.0.3'
 
 assert sys.version_info[0] == 3, "We require Python > 3"
 
 setup(
     name='bexi',
-    version=__VERSION__,
+    version=bexi.__VERSION__,
     description=(
         'BitShares Exchange Integration (BEXI).'
         'A toolkit that allows to deal with deposits and withdrawals on'

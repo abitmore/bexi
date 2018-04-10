@@ -14,7 +14,7 @@ class TestAddresses(unittest.TestCase):
             utils.get_exchange_account_id(),
             lambda: "9ed8c906-d6ab-4fb8-a314-0516a175717a")
 
-        assert unique_wallet == utils.get_exchange_account_id() + ":::9ed8c906-d6ab-4fb8-a314-0516a175717a"
+        assert unique_wallet == utils.get_exchange_account_id() + ":9ed8c906-d6ab-4fb8-a314-0516a175717a"
 
     def test_split_address(self):
         unique_wallet = create_unique_address(

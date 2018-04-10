@@ -2,7 +2,7 @@ import uuid
 from . import utils
 
 
-DELIMITER = ":::"
+DELIMITER = ":"
 
 
 def split_unique_address(address):

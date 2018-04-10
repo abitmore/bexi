@@ -173,10 +173,14 @@ class IAddressOperationStorage(IOperationStorage):
         """
 
     @abstractmethod
-    def get_balances(self, addresses=None):
+    def get_balances(self, take, continuation=None, addresses=None):
         """
         Returns the address balances of the requested address names
 
+        :param take: number of addresses to return
+        :type take: int
+        :param continuation: continuation token as given by storage
+        :type continuation: string
         :param addresses: list of requested addresses, default all tracked addresses
         :type addresses: string or list of string
         :raises: OperationStorageLostException: any technical problems contacting the storage

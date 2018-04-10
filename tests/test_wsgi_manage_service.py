@@ -312,11 +312,11 @@ class TestBlockchainApi(ATestOperationStorage):
             "cbeea30e-2218-4405-9089-86d003e4df81")
 
         in_progress = self.get_in_progress_op()
-        in_progress["incident_id"] = "some_incident"
+        in_progress["incident_id"] = "cbeea30e-2218-4405-9089-86d003e4df81"
         implementations._get_os().insert_operation(in_progress)
         implementations._get_os().flag_operation_failed(in_progress, message="manual fail")
 
-        operation = implementations.get_broadcasted_transaction("some_incident")
+        operation = implementations.get_broadcasted_transaction("cbeea30e-2218-4405-9089-86d003e4df81")
 
         assert operation.get("block", None) is None
 
@@ -332,7 +332,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'operationId': 'cbeea30e-2218-4405-9089-86d003e4df82', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:::', 'toAddress': '1.2.20137:::user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:', 'toAddress': '1.2.20137:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
         )
 
     def test_get_address_history_from(self):
@@ -347,5 +347,5 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'operationId': 'cbeea30e-2218-4405-9089-86d003e4df81', 'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:::user_name_bla', 'toAddress': '1.2.381086:::', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:user_name_bla', 'toAddress': '1.2.381086:', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )

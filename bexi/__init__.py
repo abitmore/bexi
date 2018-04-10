@@ -9,6 +9,9 @@ import collections
 import json
 
 
+__VERSION__ = "0.1"
+
+
 class Config(dict):
     """ This class allows us to load the configuration from a YAML encoded
         configuration file.

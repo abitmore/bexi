@@ -25,6 +25,8 @@ from .implementations import (
     MemoMatchingFailedException,
     BadArgumentException
 )
+from bexi import addresses
+from bexi.addresses import split_unique_address
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -81,8 +83,39 @@ def get_capabilities():
     return jsonify(
         {"isTransactionsRebuildingSupported": False,
          "areManyInputsSupported": False,
-         "areManyOutputsSupported": False}
+         "areManyOutputsSupported": False,
+         "isTestingTransfersSupported": False,
+         "isPublicAddressExtensionRequired": True,
+         "isReceiveTransactionRequired": False,
+         "canReturnExplorerUrl": True
+         }
     )
+
+
+@blueprint_manage_service.route("/api/constants")
+def get_contants():
+    """
+    [GET] /api/constants
+    """
+    return jsonify(
+        {"publicAddressExtension": {"separator": addresses.DELIMITER,
+                                    "displayName": "Memo",
+                                    "baseDisplayName": "Send to account"}
+        }
+    )
+
+
+@blueprint_manage_service.route("/api/addresses/<address>/explorer-url")
+def get_block_explorer_url(address):
+    """
+    [GET] /api/addresses/{address}/explorer-url
+    """
+    try:
+        return jsonify(
+            implementations.get_block_explorer_url(address)
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(400)
 
 
 @blueprint_manage_service.route("/api/assets")

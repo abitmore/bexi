@@ -178,7 +178,6 @@ def _get_from_history(address, take, to_or_from, after_hash=None):
             filter_by={"customer_id": address_split["customer_id"]}):
         # deposit, thus from
         add_op = {
-            "operationId": operation.get("incident_id", None),
             "timestamp": operation.get("timestamp", None),
             "fromAddress": get_from_address_from_operation(operation),
             "toAddress": get_to_address_from_operation(operation),
@@ -473,3 +472,8 @@ def observe_address_history_to(address, track):
         raise AccountDoesNotExistsException()
 
 
+def get_block_explorer_url(address):
+    if is_valid_address(address):
+        return ["http://bitshares-explorer.io/#/accounts/" + split_unique_address(address)["account_id"]]
+    else:
+        raise AccountDoesNotExistsException()

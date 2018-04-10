@@ -157,7 +157,9 @@ class TestMongoOperationStorage(ATestOperationStorage):
         filled_operation["amount_value"] = 7
         self.storage.insert_operation(filled_operation)
 
-        balances = self.storage.get_balances(address)
+        self.storage.track_address(address)
+
+        balances = self.storage.get_balances(2)
 
         assert balances[address][asset] == 18
 
@@ -181,7 +183,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
         filled_operation["amount_value"] = 1234
         self.storage.insert_operation(filled_operation)
 
-        balances = self.storage.get_balances()
+        balances = self.storage.get_balances(2)
 
         assert address1 not in balances.keys()
         assert address2 in balances.keys()

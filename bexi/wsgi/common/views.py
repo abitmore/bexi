@@ -4,7 +4,7 @@
 from flask import Blueprint
 from flask import jsonify
 
-from ... import Config
+from ... import Config, __VERSION__
 from ...wsgi import flask_setup
 
 
@@ -18,10 +18,10 @@ def isalive():
     """
         [GET] /api/isalive
     """
-    config = Config.get_config()
     info = {
-        "name": config["wsgi"]["name"],
-        "version": config["wsgi"]["version"],
+        "name": Config.get("wsgi", "name"),
+        "version": __VERSION__,
         "env": flask_setup.get_env_info(),
-        "isDebug": flask_setup.is_debug_on()}
+        "isDebug": flask_setup.is_debug_on(),
+        "contractVersion": "1.1.3"}
     return jsonify(info)

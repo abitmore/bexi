@@ -2,7 +2,7 @@
     in :mod:`.views`.
 """
 from ...connection import requires_blockchain
-from ... import Config, factory
+from ... import Config, factory, __VERSION__
 from ...wsgi import flask_setup
 import json
 
@@ -39,11 +39,11 @@ def isalive(bitshares_instance):
             }
         ))
 
-    config = Config.get_config()
     info = {
-        "name": config["wsgi"]["name"],
-        "version": config["wsgi"]["version"],
+        "name": Config.get("wsgi", "name"),
+        "version": __VERSION__,
         "env": flask_setup.get_env_info(),
-        "isDebug": flask_setup.is_debug_on()}
+        "isDebug": flask_setup.is_debug_on(),
+        "contractVersion": "1.1.3"}
 
     return info

@@ -5,7 +5,6 @@ logs:
 
 wsgi:
  name: bexi
- version: 0.0.3
  host: localhost
  port: 5000
  detailed_error: True

@@ -8,6 +8,7 @@ from bexi.addresses import split_unique_address, create_unique_address
 from bexi.connection import requires_blockchain
 from bexi.blockchain_monitor import BlockchainMonitor
 from bitshares.bitshares import BitShares
+from bexi import __VERSION__
 
 
 class TestIntegration(AFlaskTest):
@@ -21,8 +22,8 @@ class TestIntegration(AFlaskTest):
     def test_is_alive(self):
         response = self.client.get(url_for('Common.isalive'))
 
-        assert response.json ==\
-            {'env': None, 'isDebug': False, 'name': 'bexi', 'version': Config.get("wsgi", "version")}
+        self.assertEqual(response.json,
+                         {'env': None, 'isDebug': False, 'name': 'bexi', 'version': __VERSION__, 'contractVersion': '1.1.3'})
 
         # isDebug is false because the flask server is not started with debug=True
 
@@ -164,12 +165,12 @@ class TestIntegration(AFlaskTest):
         toDW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressDW) + "?take=3")
         assert toDW.status_code == 200
         self.assertEqual(toDW.json,
-                         [{'amount': '110000', 'assetId': '1.3.0', 'fromAddress': addressEW, 'hash': toDW.json[0]['hash'], 'operationId': 'cbeea30e-2218-4405-9089-86d003e4df60', 'timestamp': toDW.json[0]['timestamp'], 'toAddress': addressDW}])
+                         [{'amount': '110000', 'assetId': '1.3.0', 'fromAddress': addressEW, 'hash': toDW.json[0]['hash'], 'timestamp': toDW.json[0]['timestamp'], 'toAddress': addressDW}])
 
         fromDW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressDW) + "?take=3")
         assert fromDW.status_code == 200
         self.assertEqual(fromDW.json,
-                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'operationId': 'cbeea30e-2218-4405-9089-86d003e4df61', 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': '1.2.20137:::'}])
+                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': '1.2.20137:::'}])
 
         toHW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressHW) + "?take=3")
         assert toHW.status_code == 200
@@ -178,4 +179,4 @@ class TestIntegration(AFlaskTest):
         fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressHW) + "?take=3")
         assert fromHW.status_code == 200
         self.assertEqual(fromHW.json,
-                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'operationId': 'cbeea30e-2218-4405-9089-86d003e4df62', 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': '1.2.20138:::'}])
+                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': '1.2.20138:::'}])
