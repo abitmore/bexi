@@ -37,14 +37,21 @@ def string_to_date(date_string):
     raise Exception("Only string covnersion supported")
 
 
-def is_exchange_account(account_id):
+def is_exchange_account(account_id_or_name):
     """ checks if the given account id is configured as the exchange account
 
-        :param account_id: format 1.2.XXX
+        :param account_id_or_name: format 1.2.XXX or name
         :type account_id: str
     """
     # add different ids if necessary at some point
-    return account_id == get_exchange_account_id()
+    return account_id_or_name == get_exchange_account_id() or\
+        account_id_or_name == get_exchange_account_id()
+
+
+def get_exchange_account_name():
+    """ gets the exchange account name that is configured in config.yaml
+    """
+    return Config.get_config()["bitshares"]["exchange_account_name"]
 
 
 def get_exchange_account_id():

@@ -38,11 +38,11 @@ def create_address():
     if Config.get("bitshares", "keep_keys_private", True):
         return {
             "privateKey": "keep_keys_private",
-            "publicAddress": create_unique_address(Config.get_config()["bitshares"]["exchange_account_id"])
+            "publicAddress": create_unique_address(Config.get("bitshares", "exchange_account_name"))
         }
     else:
         return {
             "privateKey": Config.get("bitshares", "exchange_account_active_key"),
-            "publicAddress": create_unique_address(Config.get("bitshares", "exchange_account_id")),
+            "publicAddress": create_unique_address(Config.get("bitshares", "exchange_account_name")),
             "addressContext": Config.get("bitshares", "exchange_account_memo_key"),
         }

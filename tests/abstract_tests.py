@@ -87,8 +87,8 @@ class ATestOperationStorage(ATestnetTest):
                               "amount": 1759,
                               "asset_id": "1.3.0"
                           },
-                          "from": "1.2.114406",
-                          "to": "1.2.381086",
+                          "from": "1.2.20407",
+                          "to": "1.2.20477",
                           "amount": {
                               "amount": 50000000,
                               "asset_id": "1.3.121"

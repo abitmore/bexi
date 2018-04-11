@@ -14,7 +14,7 @@ class TestSignService(ATestnetTest):
             assert address["privateKey"] == "keep_keys_private"
         else:
             assert address["privateKey"] == Config.get_config()["bitshares"]["exchange_account_active_key"]
-        assert Config.get_config()["bitshares"]["exchange_account_id"] in address["publicAddress"]
+        assert Config.get("bitshares", "exchange_account_name") in address["publicAddress"]
 
     def test_sign(self):
         tx = {

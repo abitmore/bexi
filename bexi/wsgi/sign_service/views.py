@@ -22,7 +22,10 @@ def _body(parameter_name, default_value=None):
     if not lookup:
         if type(request.data) == bytes:
             lookup = json.loads(request.data)
-    return lookup.get(parameter_name, default_value)
+    value = lookup.get(parameter_name, default_value)
+    if default_value is None and value is None:
+        custom_abort(400)
+    return value
 
 
 @blueprint_sign_service.route("/api/wallets", methods=["POST"])

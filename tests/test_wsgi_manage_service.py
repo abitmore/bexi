@@ -13,6 +13,8 @@ from bexi.wsgi import sign_service
 
 from flask import json
 from bitshares.exceptions import AccountDoesNotExistsException
+from bexi.factory import get_operation_storage
+from time import sleep
 
 
 class TestBlockchainApi(ATestOperationStorage):
@@ -47,6 +49,12 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def test_validate_address(self):
         assert implementations.validate_address(create_unique_address('xeroc')) ==\
+            {'isValid': True}
+
+        assert implementations.validate_address('xeroc') ==\
+            {'isValid': True}
+
+        assert implementations.validate_address(create_unique_address('xeroc', '')) ==\
             {'isValid': True}
 
         assert implementations.validate_address(create_unique_address('this_account_will_never_exist')) ==\
@@ -121,26 +129,36 @@ class TestBlockchainApi(ATestOperationStorage):
 
         implementations._get_os().set_last_head_block_num(1010)
 
+        sleep(1)
+
+        all_balances = []
+
         result = implementations.get_balances(1)
-        self.assertEqual(
-            result['items'],
-            [{'address': get_address_from_operation(first), 'assetId': '1.3.0', 'balance': 50000000, 'block': 1010}]
-        )
+        all_balances.append(result['items'])
 
         result = implementations.get_balances(1, result["continuation"])
-
-        self.assertEqual(
-            result['items'],
-            [{'address': get_address_from_operation(second), 'assetId': '1.3.0', 'balance': 50000001, 'block': 1010}]
-        )
-
-        assert result["continuation"] is not None
+        all_balances.append(result['items'])
 
         result = implementations.get_balances(1, result["continuation"])
+        all_balances.append(result['items'])
 
-        self.assertEqual(
-            result['items'],
-            []
+        self.assertIn(
+            [{'address': 'lykke-test:user_name_bla_2',
+              'assetId': '1.3.0',
+              'balance': 50000001,
+              'block': 1010}],
+            all_balances,
+        )
+        self.assertIn(
+            [{'address': 'lykke-test:user_name_bla',
+              'assetId': '1.3.0',
+              'balance': 50000000,
+              'block': 1010}],
+            all_balances,
+        )
+        self.assertIn(
+            [],
+            all_balances,
         )
 
     def test_build_transaction_not_enough_balance(self):
@@ -332,7 +350,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.114406:', 'toAddress': '1.2.20137:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke2018:', 'toAddress': 'lykke-test:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
         )
 
     def test_get_address_history_from(self):
@@ -347,5 +365,13 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': '1.2.20137:user_name_bla', 'toAddress': '1.2.381086:', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test:user_name_bla', 'toAddress': 'lykke-dev-autotests:', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )
+
+
+class TestBlockchainApiAzure(TestBlockchainApi):
+
+    def setUp(self):
+        super(TestBlockchainApiAzure, self).setUp()
+        self.storage = self.storage = get_operation_storage("azuretest")
+        implementations._get_os(storage=self.storage)

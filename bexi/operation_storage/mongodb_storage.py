@@ -220,13 +220,21 @@ class MongoDBOperationsStorage(BasicOperationStorage):
         return operation
 
     @retry_auto_reconnect
-    def get_balances(self, take, continuation=0, addresses=None):
+    def get_balances(self, take, continuation=None, addresses=None):
         address_balances = collections.defaultdict(lambda: collections.defaultdict())
+
+        if continuation is None:
+            continuation = 0
 
         if not addresses:
             addresses = [x["address"] for x in
-                         list(self._address_storage.find({"usage": "balance"}))]
-            addresses = addresses[continuation:(min(continuation + take, len(addresses)))]
+                         list(self._address_storage.find({"usage": "balance"}).sort([("_id", pymongo.ASCENDING)]))]
+            lenAddresses = len(addresses)
+            end = (min(continuation + take, lenAddresses))
+            addresses = addresses[continuation:end]
+            if end >= lenAddresses:
+                end = None
+            address_balances["continuation"] = end
 
         if type(addresses) == str:
             addresses = [addresses]
