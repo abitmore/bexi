@@ -3,7 +3,7 @@ from tests.abstract_tests import ATestOperationStorage
 from bexi.operation_storage.exceptions import AddressAlreadyTrackedException,\
     AddressNotTrackedException, NoBlockNumException, StatusInvalidException,\
     InvalidOperationException, OperationNotFoundException,\
-    DuplicateOperationException
+    DuplicateOperationException, OperationStorageException, InputInvalidException
 
 from bexi.addresses import create_unique_address, split_unique_address
 from bexi.factory import get_operation_storage
@@ -125,7 +125,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
         assert len(self.storage.get_operations_in_progress()) == 0
 
     def test_get_balance(self):
-        address = create_unique_address("some_user_1")
+        address = create_unique_address("lykke-customer")
         addrs = split_unique_address(address)
         asset = "BTS_test"
 
@@ -163,9 +163,19 @@ class TestMongoOperationStorage(ATestOperationStorage):
 
         assert balances[address][asset] == 18
 
+        self.assertRaises(InputInvalidException,
+                          self.storage.get_balances,
+                          2,
+                          "§=)$")
+
+        self.assertRaises(InputInvalidException,
+                          self.storage.get_balances,
+                          2,
+                          "069548")
+
     def test_tracking(self):
-        address1 = create_unique_address("user_1")
-        address2 = create_unique_address("user_2")
+        address1 = create_unique_address("lykke-customer")
+        address2 = create_unique_address("lykke-test")
         addr2s = split_unique_address(address2)
 
         self.storage.track_address(address1)

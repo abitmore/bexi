@@ -10,6 +10,7 @@ from ..addresses import split_unique_address
 from .exceptions import (
     AddressNotTrackedException,
     AddressAlreadyTrackedException,
+    InputInvalidException,
     OperationNotFoundException,
     DuplicateOperationException,
     InvalidOperationException,
@@ -19,6 +20,7 @@ from .interface import (
     BasicOperationStorage)
 from bexi import Config
 import json
+from json.decoder import JSONDecodeError
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -292,10 +294,17 @@ class AzureOperationsStorage(BasicOperationStorage):
 
         if not addresses:
             if continuation:
+                try:
+                    continuation_marker = json.loads(continuation)
+                except TypeError:
+                    raise InputInvalidException()
+                except JSONDecodeError:
+                    raise InputInvalidException()
+
                 addresses = self._service.query_entities(
                     self._azure_config["address_table"] + "balance",
                     num_results=take,
-                    marker=json.loads(continuation))
+                    marker=continuation_marker)
             else:
                 addresses = self._service.query_entities(
                     self._azure_config["address_table"] + "balance",

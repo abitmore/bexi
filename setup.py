@@ -16,7 +16,7 @@ setup(
         'the BitShares Blockchain.'
     ),
     long_description=open('README.rst').read(),
-    download_url='https://github.com/blockchainbv/bexi/tarball/' + __VERSION__,
+    download_url='https://github.com/blockchainbv/bexi/tarball/' + bexi.__VERSION__,
     author='Blockchain BV',
     author_email='info@BlockchainBV.com',
     maintainer='Blockchain Projects BV',

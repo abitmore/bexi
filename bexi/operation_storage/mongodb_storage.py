@@ -9,6 +9,7 @@ from .interface import (
 from .exceptions import (
     AddressNotTrackedException,
     AddressAlreadyTrackedException,
+    InputInvalidException,
     OperationNotFoundException,
     DuplicateOperationException,
     InvalidOperationException,
@@ -230,7 +231,11 @@ class MongoDBOperationsStorage(BasicOperationStorage):
             addresses = [x["address"] for x in
                          list(self._address_storage.find({"usage": "balance"}).sort([("_id", pymongo.ASCENDING)]))]
             lenAddresses = len(addresses)
-            end = (min(continuation + take, lenAddresses))
+            try:
+                end = (min(continuation + take, lenAddresses))
+            except TypeError:
+                raise InputInvalidException()
+
             addresses = addresses[continuation:end]
             if end >= lenAddresses:
                 end = None

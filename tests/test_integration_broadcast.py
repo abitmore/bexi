@@ -170,7 +170,7 @@ class TestIntegration(AFlaskTest):
         fromDW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressDW) + "?take=3")
         assert fromDW.status_code == 200
         self.assertEqual(fromDW.json,
-                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': '1.2.20137:::'}])
+                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': 'lykke-test:'}])
 
         toHW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressHW) + "?take=3")
         assert toHW.status_code == 200
@@ -179,4 +179,4 @@ class TestIntegration(AFlaskTest):
         fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressHW) + "?take=3")
         assert fromHW.status_code == 200
         self.assertEqual(fromHW.json,
-                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': '1.2.20138:::'}])
+                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': 'lykke-customer:'}])

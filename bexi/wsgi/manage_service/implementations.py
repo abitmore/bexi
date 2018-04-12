@@ -23,11 +23,9 @@ from ...connection import requires_blockchain
 from ... import Config, factory
 from ... import utils
 from ...operation_storage import operation_formatter
-from ...operation_storage.exceptions import OperationNotFoundException
+from ...operation_storage.exceptions import InputInvalidException
 
 from bitsharesapi.exceptions import UnhandledRPCError
-import time
-from graphenebase import transactions
 from bitshares.wallet import Wallet
 
 
@@ -136,7 +134,10 @@ def unobserve_address(address):
 
 
 def get_balances(take, continuation=None):
-    balancesDict = _get_os().get_balances(take, continuation)
+    try:
+        balancesDict = _get_os().get_balances(take, continuation)
+    except InputInvalidException:
+        raise BadArgumentException()
 
     continuation = balancesDict.pop("continuation", None)
 

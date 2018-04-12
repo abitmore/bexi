@@ -19,6 +19,10 @@ class AddressNotTrackedException(OperationStorageException):
     pass
 
 
+class InputInvalidException(OperationStorageException):
+    pass
+
+
 class StatusInvalidException(OperationStorageException):
     pass
 
