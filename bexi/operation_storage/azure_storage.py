@@ -414,7 +414,7 @@ class AzureOperationsStorage(BasicOperationStorage):
     def set_last_head_block_num(self, head_block_num):
         current_last = self.get_last_head_block_num()
         if current_last >= head_block_num:
-            raise Exception("Marching backwards not supported")
+            raise Exception("Marching backwards not supported! Last: " + str(current_last) + " New: " + str(head_block_num))
         self._service.insert_or_replace_entity(
             self._azure_config["status_table"],
             {"PartitionKey": "head_block_num",
