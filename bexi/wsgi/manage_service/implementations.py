@@ -415,7 +415,7 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
         # This happens in case of virtual consolidation transactions/transfers
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
             op = map_operation(tx, op_in_tx, operation)
-            op["block_num"] = -1
+            op["block_num"] = bitshares_instance.rpc.get_dynamic_global_properties()['last_irreversible_block_num']
             op["fee_value"] = 0
             storage.flag_operation_completed(op)
         return {"chain_identifier": "virtual_transfer", "block_num": op["block_num"]}

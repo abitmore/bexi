@@ -141,6 +141,10 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
         assert response.status_code == 200
         self.assertEqual(response.json["items"][0]["balance"], 10000)
+        assert block_num > 0
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df61"))
+        self.assertEqual(response.json["block"], block_num)
 
         block_num = build_sign_and_broadcast(
             {
