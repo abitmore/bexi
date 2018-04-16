@@ -86,7 +86,7 @@ def create_blockchain_monitor_service_app(app=None):
     """
     if not app:
         app = create_basic_flask_app()
-        create_common_app(app)
+        # dont add common, isalive is overwritten
 
     flask_setup.setup_blueprint(blueprint_blockchain_monitor_service)
     app.register_blueprint(blueprint_blockchain_monitor_service)
@@ -111,5 +111,7 @@ def get_manage_service_app(app=None):
 
 def get_blockchain_monitor_service_app(app=None):
     Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares_memo_keys.yaml",
+                 "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
     return create_blockchain_monitor_service_app(app)

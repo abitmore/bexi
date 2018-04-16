@@ -44,6 +44,10 @@ def isalive(bitshares_instance):
         "version": __VERSION__,
         "env": flask_setup.get_env_info(),
         "isDebug": flask_setup.is_debug_on(),
-        "contractVersion": "1.1.3"}
+        "contractVersion": "1.1.3",
+        "status": {
+            "last_processed": last_block_stored,
+            "last_irreversible_block_num": last_block}
+    }
 
     return info

@@ -9,7 +9,7 @@ from bexi import Config
 from bexi.connection import requires_blockchain
 from bexi.blockchain_monitor import BlockchainMonitor
 import logging
-import os
+import threading
 
 config = Config.get("wsgi")
 
@@ -57,24 +57,36 @@ def manage_service(host, port):
 
 
 @main.command()
-def blockchain_monitor():
-    load_blockchain_monitor_config()
+@click.option("--host")
+@click.option("--port")
+def blockchain_monitor_service(host, port):
+    host = host or config["host"]
+    port = port or config["port"]
+    app = get_blockchain_monitor_service_app()
 
-    logging.getLogger(__name__).info("Starting BitShares blockchain monitor ...")
-    start_block_monitor()
+    logging.getLogger(__name__).info("Starting BitShares blockchain monitor as coroutines ...")
+
+    thr = threading.Thread(target=start_block_monitor, daemon=True)
+    thr.start()  # run in background
+
+    app.logger.info("Starting " + config["name"] + " blockchain monitor service ...")
+    app.run(host=host, port=port)
 
 
-def load_blockchain_monitor_config():
+@main.command()
+def only_blockchain_monitor():
     Config.load(["config_bitshares_connection.yaml",
                  "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
+    logging.getLogger(__name__).info("Starting BitShares blockchain monitor ...")
+    start_block_monitor()
 
 
 @main.command()
 @click.option("--host")
 @click.option("--port")
-def blockchain_monitor_service(host, port):
+def only_blockchain_monitor_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
@@ -86,7 +98,6 @@ def blockchain_monitor_service(host, port):
 @requires_blockchain
 def start_block_monitor():
     monitor = BlockchainMonitor()
-#     monitor.start_block = 15290125
     monitor.listen()
 
 

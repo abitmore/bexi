@@ -179,7 +179,7 @@ class Config(dict):
         return d
 
 
-def set_global_logger():
+def set_global_logger(existing_loggers=None):
     # setup logging
     # ... log to file system
     log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
@@ -206,7 +206,20 @@ def set_global_logger():
                         format=log_format,
                         handlers=[trfh, sh])
 
-    return [trfh, sh]
+    use_handlers = [trfh, sh]
+
+    if existing_loggers is not None:
+        if not type(existing_loggers) == list:
+            existing_loggers = [existing_loggers]
+        for logger in existing_loggers:
+            logger.setLevel(log_level)
+            while len(logger.handlers) > 0:
+                logger.removeHandler(logger.handlers[0])
+            for handler in use_handlers:
+                logger.addHandler(handler)
+
+    return use_handlers
 
 
 Config.load("config_common.yaml")
+set_global_logger()
