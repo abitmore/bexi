@@ -123,7 +123,7 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
         assert response.status_code == 200
         self.assertEqual(response.json["items"],
-                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': 110000, 'block': block_num + 1}])
+                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': 110000, 'block': block_num * 10}])
 
         block_num = build_sign_and_broadcast(
             {
@@ -144,7 +144,7 @@ class TestIntegration(AFlaskTest):
         assert block_num > 0
 
         response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df61"))
-        self.assertEqual(response.json["block"], block_num)
+        self.assertEqual(response.json["block"], block_num * 10)
 
         block_num = build_sign_and_broadcast(
             {
@@ -163,7 +163,7 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
         assert response.status_code == 200
         self.assertEqual(response.json["items"],
-                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': 10000, 'block': block_num + 1}])
+                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': 10000, 'block': block_num * 10}])
 
         self.maxDiff = None
 

@@ -91,6 +91,7 @@ class TestBlockchainApi(ATestOperationStorage):
             {'continuation': None, 'items': []}
 
         transfer = self.get_completed_op()
+        transfer["block_num"] = 1010
         transfer["amount_asset_id"] = "1.3.0"
 
         transfer["customer_id"] = "user_name_bla"
@@ -127,8 +128,6 @@ class TestBlockchainApi(ATestOperationStorage):
         implementations.observe_address(get_address_from_operation(second))
         implementations.observe_address(get_address_from_operation(third))
 
-        implementations._get_os().set_last_head_block_num(1010)
-
         sleep(1)
 
         all_balances = []
@@ -146,14 +145,14 @@ class TestBlockchainApi(ATestOperationStorage):
             [{'address': 'lykke-test:user_name_bla_2',
               'assetId': '1.3.0',
               'balance': 50000001,
-              'block': 1010}],
+              'block': 1010 * 10}],
             all_balances,
         )
         self.assertIn(
             [{'address': 'lykke-test:user_name_bla',
               'assetId': '1.3.0',
               'balance': 50000000,
-              'block': 1010}],
+              'block': 1010 * 10}],
             all_balances,
         )
         self.assertIn(

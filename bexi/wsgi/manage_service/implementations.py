@@ -144,6 +144,7 @@ def get_balances(take, continuation=None):
     all_accounts = sorted(balancesDict.keys())
     all_balances = []
     for account in all_accounts:
+        block_num = balancesDict[account].pop("block_num")
         for asset_id in balancesDict[account].keys():
             if balancesDict[account][asset_id] > 0:
                 all_balances.append(
@@ -151,7 +152,7 @@ def get_balances(take, continuation=None):
                         "address": account,
                         "assetId": asset_id,
                         "balance": balancesDict[account][asset_id],
-                        "block": _get_os().get_last_head_block_num()
+                        "block": int(block_num * 10)
                     }
                 )
 
@@ -412,10 +413,11 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
         raise exception_occured
 
     if from_account == to_account:
+        block_num = bitshares_instance.rpc.get_dynamic_global_properties()['last_irreversible_block_num']
         # This happens in case of virtual consolidation transactions/transfers
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
             op = map_operation(tx, op_in_tx, operation)
-            op["block_num"] = bitshares_instance.rpc.get_dynamic_global_properties()['last_irreversible_block_num']
+            op["block_num"] = block_num + (op_in_tx + 1) * 0.1
             op["fee_value"] = 0
             storage.flag_operation_completed(op)
         return {"chain_identifier": "virtual_transfer", "block_num": op["block_num"]}
@@ -444,7 +446,7 @@ def get_broadcasted_transaction(operationId):
         r_op["errorCode"] = operation["message"]
 
     if r_op["state"] == "completed":
-        r_op["block"] = operation["block_num"]
+        r_op["block"] = int(operation["block_num"] * 10)
 
     return r_op
 

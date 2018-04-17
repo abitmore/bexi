@@ -246,14 +246,15 @@ class MongoDBOperationsStorage(BasicOperationStorage):
 
         for address in addresses:
             addrs = split_unique_address(address)
-
+            max_block_number = 0
             for operation in self.get_operations_completed(
                     filter_by={
                         "customer_id": addrs["customer_id"]
                     }):
+                this_block_num = operation["block_num"]
+                asset_id = operation["amount_asset_id"]
                 if addrs["account_id"] == operation["from"]:
                     # negative
-                    asset_id = operation["amount_asset_id"]
                     balance = address_balances[address].get(asset_id, 0)
 
                     address_balances[address][asset_id] =\
@@ -267,14 +268,20 @@ class MongoDBOperationsStorage(BasicOperationStorage):
                         balance - operation["fee_value"]
                 elif addrs["account_id"] == operation["to"]:
                     # positive
-                    asset_id = operation["amount_asset_id"]
                     balance = address_balances[address].get(asset_id, 0)
 
                     address_balances[address][asset_id] =\
                         balance + operation["amount_value"]
                 else:
                     raise InvalidOperationException()
+                max_block_number = max(max_block_number, this_block_num)
+            if max_block_number > 0:
+                address_balances[address]["block_num"] = max_block_number
 
+        # do not return default dicts
+        for key, value in address_balances.items():
+            if type(value) == collections.defaultdict:
+                address_balances[key] = dict(value)
         return dict(address_balances)
 
     def _parse_filter(self, filter_by):
