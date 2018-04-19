@@ -1,10 +1,11 @@
 from flask.helpers import url_for
 
-from tests.abstract_tests import AFlaskTest
-from bexi import Config
-from bexi.addresses import create_unique_address
+from tests.abstract_tests import AFlaskTest, ATestOperationStorage
+from bexi import Config, utils
+from bexi.addresses import create_unique_address, get_address_from_operation
 from time import sleep
 import json
+from bexi.wsgi.manage_service import implementations
 
 
 class TestIntegration(AFlaskTest):
@@ -125,6 +126,12 @@ class TestIntegration(AFlaskTest):
 
         self.invalidate(url_for('Blockchain.Api.get_balances', take="35.23"),
                         400)
+
+        answer1 = self.invalidate(url_for('Blockchain.Api.get_balances',
+                                          take="1",
+                                          continuation='{"nextpartitionkey": "1!4!NjY5", "nextrowkey": "1!64!MS4yLjIwNDA3OjVmNWUyZjU1LWNmYzUtNDcwZi1iYmU4LTgwOTQyZGUxMzFkZQ--"}'
+                                          ),
+                                  200)
 
     def test_build_transaction(self):
         self.invalidate(url_for('Blockchain.Api.build_transaction'),
