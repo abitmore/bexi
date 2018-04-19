@@ -152,7 +152,7 @@ class TestIntegration(AFlaskTest):
             {
                 "operationId": "cbeea30e-2218-4405-9089-86d003e4df62",
                 "fromAddress": addressHW,
-                "toAddress": create_unique_address(self.get_customer_id(), ""),
+                "toAddress": create_unique_address(self.get_customer_id(), "some_user_memo"),
                 "assetId": "1.3.0",
                 "amount": 100000,
                 "includeFee": True
