@@ -139,7 +139,7 @@ def get_balances(take, continuation=None):
     except InputInvalidException:
         raise BadArgumentException()
 
-    continuation = balancesDict.pop("continuation", None)
+    continuation = balancesDict.pop("continuation")
 
     all_accounts = sorted(balancesDict.keys())
     all_balances = []

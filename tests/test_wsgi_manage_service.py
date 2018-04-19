@@ -21,6 +21,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
     def setUp(self):
         super(TestBlockchainApi, self).setUp()
+        self.storage = self.storage = get_operation_storage("azuretest")
         implementations._get_os(storage=self.storage)
 
     def test_get_all_assets(self):
@@ -87,7 +88,7 @@ class TestBlockchainApi(ATestOperationStorage):
             address)
 
     def test_get_balances(self):
-        assert implementations.get_balances(1, 0) ==\
+        assert implementations.get_balances(1) ==\
             {'continuation': None, 'items': []}
 
         transfer = self.get_completed_op()
@@ -96,7 +97,6 @@ class TestBlockchainApi(ATestOperationStorage):
 
         transfer["customer_id"] = "user_name_bla"
         transfer["to"] = utils.get_exchange_account_id()
-        implementations._get_os().insert_operation(transfer)
 
         first = transfer.copy()
 
@@ -104,7 +104,6 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["customer_id"] = "user_name_bla_2"
         transfer["chain_identifier"] = "24:25"
         transfer["amount_value"] = 50000001
-        implementations._get_os().insert_operation(transfer)
 
         second = transfer.copy()
 
@@ -112,7 +111,6 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["customer_id"] = "user_name_bla_3"
         transfer["chain_identifier"] = "24:24"
         transfer["amount_value"] = 50000002
-        implementations._get_os().insert_operation(transfer)
 
         third = transfer.copy()
 
@@ -122,11 +120,15 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["from"] = utils.get_exchange_account_id()
         transfer["to"] = "some_dude"
         transfer["fee_value"] = 0
-        implementations._get_os().insert_operation(transfer)
 
         implementations.observe_address(get_address_from_operation(first))
         implementations.observe_address(get_address_from_operation(second))
         implementations.observe_address(get_address_from_operation(third))
+
+        implementations._get_os().insert_operation(first)
+        implementations._get_os().insert_operation(second)
+        implementations._get_os().insert_operation(third)
+        implementations._get_os().insert_operation(transfer)
 
         sleep(1)
 
@@ -153,10 +155,6 @@ class TestBlockchainApi(ATestOperationStorage):
               'assetId': '1.3.0',
               'balance': 50000000,
               'block': 1010 * 10}],
-            all_balances,
-        )
-        self.assertIn(
-            [],
             all_balances,
         )
 
@@ -315,6 +313,7 @@ class TestBlockchainApi(ATestOperationStorage):
     def test_get_and_delete_broadcasted(self):
         completed = self.get_completed_op()
         completed["incident_id"] = "cbeea30e-2218-4405-9089-86d003e4df83"
+        completed["to"] = utils.get_exchange_account_id()
         implementations._get_os().insert_operation(completed)
 
         operation = implementations.get_broadcasted_transaction("cbeea30e-2218-4405-9089-86d003e4df83")
@@ -349,7 +348,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke2018:', 'toAddress': 'lykke-test:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke2018', 'toAddress': 'lykke-test:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1234'}]
         )
 
     def test_get_address_history_from(self):
@@ -364,7 +363,7 @@ class TestBlockchainApi(ATestOperationStorage):
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test:user_name_bla', 'toAddress': 'lykke-dev-autotests:', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test:user_name_bla', 'toAddress': 'lykke-dev-autotests', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )
 
 
@@ -372,5 +371,5 @@ class TestBlockchainApiAzure(TestBlockchainApi):
 
     def setUp(self):
         super(TestBlockchainApiAzure, self).setUp()
-        self.storage = self.storage = get_operation_storage("azuretest")
+        self.storage = self.storage = get_operation_storage("mongodbtest")
         implementations._get_os(storage=self.storage)

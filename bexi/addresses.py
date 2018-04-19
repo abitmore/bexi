@@ -37,7 +37,7 @@ def get_from_address_from_operation(operation):
     if utils.is_exchange_account(operation["from"]):
         return get_address_from_operation(operation)
     else:
-        return ensure_account_name(operation["from"]) + DELIMITER + ""
+        return ensure_account_name(operation["from"])
 
 
 def get_to_address_from_operation(operation):
@@ -52,7 +52,7 @@ def get_to_address_from_operation(operation):
     if utils.is_exchange_account(operation["to"]) and not utils.is_exchange_account(operation["from"]):
         return get_address_from_operation(operation)
     else:
-        return ensure_account_name(operation["to"]) + DELIMITER + ""
+        return ensure_account_name(operation["to"])
 
 
 def get_address_from_operation(operation):
@@ -115,7 +115,10 @@ def create_unique_address(account_id_or_name, randomizer=uuid.uuid4):
     """
     account_id_or_name = ensure_account_name(account_id_or_name)
     if type(randomizer) == str:
-        return account_id_or_name + DELIMITER + randomizer
+        if randomizer == "":
+            return account_id_or_name
+        else:
+            return account_id_or_name + DELIMITER + randomizer
     return account_id_or_name + DELIMITER + str(randomizer())
 
 

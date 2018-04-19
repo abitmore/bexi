@@ -21,6 +21,7 @@ from .interface import (
 from bexi import Config
 import json
 from json.decoder import JSONDecodeError
+from bexi.addresses import get_address_from_operation
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -58,6 +59,7 @@ class AzureOperationsStorage(BasicOperationStorage):
         self._create_operations_storage(purge)
         self._create_status_storage(purge)
         self._create_address_storage(purge)
+        self._create_balances_storage(purge)
 
     def _debug_print(self, operation):
         from pprint import pprint
@@ -96,6 +98,21 @@ class AzureOperationsStorage(BasicOperationStorage):
                 pass
         while not self._service.exists(self._azure_config["status_table"]):
             self._service.create_table(self._azure_config["status_table"])
+            time.sleep(0.1)
+
+    def _create_balances_storage(self, purge):
+        if purge:
+            try:
+                tablename = self._azure_config["balances_table"]
+                for item in self._service.query_entities(tablename):
+                    self._service.delete_entity(
+                        tablename,
+                        item["PartitionKey"],
+                        item["RowKey"])
+            except AzureMissingResourceHttpError:
+                pass
+        while not self._service.exists(self._azure_config["balances_table"]):
+            self._service.create_table(self._azure_config["balances_table"])
             time.sleep(0.1)
 
     def _create_operations_storage(self, purge):
@@ -161,6 +178,20 @@ class AzureOperationsStorage(BasicOperationStorage):
     def untrack_address(self, address, usage="balance"):
         try:
             self._service.delete_entity(
+                self._azure_config["address_table"] + usage,
+                self._short_digit_hash(address),
+                address)
+            try:
+                self._delete_balance(address)
+            except AzureMissingResourceHttpError:
+                pass
+        except AzureMissingResourceHttpError:
+            raise AddressNotTrackedException()
+
+    @retry_auto_reconnect
+    def _get_address(self, address, usage="balance"):
+        try:
+            self._service.get_entity(
                 self._azure_config["address_table"] + usage,
                 self._short_digit_hash(address),
                 address)
@@ -230,6 +261,8 @@ class AzureOperationsStorage(BasicOperationStorage):
 
         self._update(operation, status="completed")
 
+        self._ensure_balances(operation)
+
     @retry_auto_reconnect
     def flag_operation_failed(self, operation, message=None):
         # do basics
@@ -243,6 +276,103 @@ class AzureOperationsStorage(BasicOperationStorage):
         operation = super(AzureOperationsStorage, self).insert_operation(operation)
 
         self._insert(operation)
+
+        if operation["status"] == "completed":
+            self._ensure_balances(operation)
+
+    @retry_auto_reconnect
+    def _delete_balance(self, address):
+        self._service.delete_entity(
+            self._azure_config["balances_table"],
+            self._short_digit_hash(address),
+            address
+        )
+
+    @retry_auto_reconnect
+    def _ensure_balances(self, operation):
+        affected_address = get_address_from_operation(operation)
+        try:
+            self._get_address(affected_address)
+        except AddressNotTrackedException:
+            # delte if exists and return
+            try:
+                self._delete_balance(affected_address)
+            except AzureMissingResourceHttpError:
+                pass
+            return
+
+        try:
+            balance_dict = self._service.get_entity(
+                self._azure_config["balances_table"],
+                self._short_digit_hash(affected_address),
+                affected_address)
+            insert = False
+        except AzureMissingResourceHttpError as e:
+            balance_dict = {"address": affected_address}
+            insert = True
+
+        balance_dict["blocknum"] = max(balance_dict.get("blocknum", 0), operation["block_num"])
+        total = 0
+
+        addrs = split_unique_address(affected_address)
+        asset_id = "balance" + operation["amount_asset_id"].split("1.3.")[1]
+        if addrs["account_id"] == operation["from"]:
+            # internal transfer and withdraw
+
+            # negative
+            balance = balance_dict.get(asset_id, 0)
+
+            balance_dict[asset_id] = balance - operation["amount_value"]
+
+            # fee as well
+            asset_id = operation["fee_asset_id"]
+            balance = balance_dict.get(asset_id, 0)
+
+            balance_dict[asset_id] = balance - operation["fee_value"]
+        elif addrs["account_id"] == operation["to"]:
+            # deposit
+
+            # positive
+            balance = balance_dict.get(asset_id, 0)
+
+            balance_dict[asset_id] = balance + operation["amount_value"]
+
+            # fees were paid by someone else
+        else:
+            raise InvalidOperationException()
+
+        for key, value in balance_dict.items():
+            if key.startswith("balance"):
+                total = total + value
+
+        balance_dict["PartitionKey"] = self._short_digit_hash(balance_dict["address"])
+        balance_dict["RowKey"] = balance_dict["address"]
+
+        if total == 0:
+            if not insert:
+                try:
+                    self._delete_balance(affected_address)
+                except AzureMissingResourceHttpError:
+                    pass
+            return
+
+        # may be updated or inserted, total > 0
+        if (insert):
+            try:
+                self._service.insert_entity(
+                    self._azure_config["balances_table"],
+                    balance_dict
+                )
+            except AzureMissingResourceHttpError:
+                raise OperationStorageException("Critical error in database consistency")
+        else:
+            try:
+                self._service.update_entity(
+                    self._azure_config["balances_table"],
+                    balance_dict
+                )
+            except AzureConflictHttpError:
+                raise OperationStorageException("Critical error in database consistency")
 
     @retry_auto_reconnect
     def insert_or_update_operation(self, operation):
@@ -289,11 +419,46 @@ class AzureOperationsStorage(BasicOperationStorage):
         return operation
 
     @retry_auto_reconnect
-    def get_balances(self, take, continuation=None, addresses=None):
+    def get_balances(self, take, continuation=None, addresses=None, recalculate=False):
+        if recalculate:
+            return self._get_balances_recalculate(take, continuation, addresses)
+        else:
+            if continuation is not None:
+                try:
+                    continuation_marker = json.loads(continuation)
+                except TypeError:
+                    raise InputInvalidException()
+                except JSONDecodeError:
+                    raise InputInvalidException()
+
+                balances = self._service.query_entities(
+                    self._azure_config["balances_table"],
+                    num_results=take,
+                    marker=continuation_marker)
+            else:
+                balances = self._service.query_entities(
+                    self._azure_config["balances_table"],
+                    num_results=take)
+            return_balances = {}
+            for address_balance in balances:
+                return_balances[address_balance["address"]] = {
+                    "block_num": address_balance["blocknum"]
+                }
+                for key, value in address_balance.items():
+                    if key.startswith("balance"):
+                        asset_id = "1.3." + key.split("balance")[1]
+                        return_balances[address_balance["address"]][asset_id] = value
+            return_balances["continuation"] = None
+            if balances.next_marker:
+                return_balances["continuation"] = json.dumps(balances.next_marker)
+            return return_balances
+
+    @retry_auto_reconnect
+    def _get_balances_recalculate(self, take, continuation=None, addresses=None):
         address_balances = collections.defaultdict(lambda: collections.defaultdict())
 
         if not addresses:
-            if continuation:
+            if continuation is not None:
                 try:
                     continuation_marker = json.loads(continuation)
                 except TypeError:

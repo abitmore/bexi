@@ -8,13 +8,14 @@ from bexi.operation_storage.exceptions import AddressAlreadyTrackedException,\
 from bexi.addresses import create_unique_address, split_unique_address
 from bexi.factory import get_operation_storage
 from jsonschema.exceptions import ValidationError
+from bexi.utils import get_exchange_account_id
 
 
 class TestMongoOperationStorage(ATestOperationStorage):
 
     def setUp(self):
         super(TestMongoOperationStorage, self).setUp()
-        self.storage = get_operation_storage("mongodbtest")
+        self.storage = get_operation_storage("azuretest")
 
     def test_insert_and_complete(self):
         filled_operation = self.get_in_progress_op()
@@ -32,6 +33,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
                           filled_operation)
 
         filled_operation = self.get_completed_op()
+        filled_operation["to"] = get_exchange_account_id()
         self.storage.flag_operation_completed(filled_operation)
 
         filled_operation["status"] = "in-progress"
@@ -52,6 +54,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
         filled_operation = self.get_completed_op()
         filled_operation["chain_identifier"] = "some_other_chain_identifier_1"
         filled_operation["incident_id"] = "some_other_incident_id"
+        filled_operation["to"] = get_exchange_account_id()
         self.storage.insert_operation(filled_operation)
 
         self.assertRaises(DuplicateOperationException,
@@ -100,8 +103,12 @@ class TestMongoOperationStorage(ATestOperationStorage):
                           filled_operation)
 
     def test_delete(self):
-        self.storage.insert_operation(self.get_in_progress_op())
-        self.storage.flag_operation_completed(self.get_completed_op())
+        op = self.get_in_progress_op()
+        op["to"] = get_exchange_account_id()
+        self.storage.insert_operation(op)
+        op = self.get_completed_op()
+        op["to"] = get_exchange_account_id()
+        self.storage.flag_operation_completed(op)
 
         operations = self.storage.get_operations_completed()
 
@@ -125,9 +132,11 @@ class TestMongoOperationStorage(ATestOperationStorage):
         assert len(self.storage.get_operations_in_progress()) == 0
 
     def test_get_balance(self):
-        address = create_unique_address("lykke-customer")
+        address = create_unique_address(get_exchange_account_id())
         addrs = split_unique_address(address)
-        asset = "BTS_test"
+        asset = "1.3.131"
+
+        self.storage.track_address(address)
 
         filled_operation = self.get_completed_op()
         filled_operation["to"] = addrs["account_id"]
@@ -157,8 +166,6 @@ class TestMongoOperationStorage(ATestOperationStorage):
         filled_operation["amount_value"] = 7
         self.storage.insert_operation(filled_operation)
 
-        self.storage.track_address(address)
-
         balances = self.storage.get_balances(2)
 
         assert balances[address][asset] == 18
@@ -174,7 +181,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
                           "069548")
 
     def test_tracking(self):
-        address1 = create_unique_address("lykke-customer")
+        address1 = create_unique_address(get_exchange_account_id())
         address2 = create_unique_address("lykke-test")
         addr2s = split_unique_address(address2)
 
@@ -189,7 +196,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
         filled_operation = self.get_completed_op()
         filled_operation["to"] = addr2s["account_id"]
         filled_operation["customer_id"] = addr2s["customer_id"]
-        filled_operation["amount_asset_id"] = "TEST"
+        filled_operation["amount_asset_id"] = "1.3.4123"
         filled_operation["amount_value"] = 1234
         self.storage.insert_operation(filled_operation)
 
@@ -197,7 +204,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
 
         assert address1 not in balances.keys()
         assert address2 in balances.keys()
-        assert balances[address2]["TEST"] == 1234
+        assert balances[address2]["1.3.4123"] == 1234
 
         self.storage.untrack_address(address1)
 
@@ -227,5 +234,5 @@ class TestAzureOperationStorageFactory(TestMongoOperationStorage):
 
     def setUp(self):
         super(TestAzureOperationStorageFactory, self).setUp()
-        self.storage = get_operation_storage("azuretest")
+        self.storage = get_operation_storage("mongodbtest")
 
