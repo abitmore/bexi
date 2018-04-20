@@ -159,7 +159,7 @@ class TestMongoOperationStorage(ATestOperationStorage):
         self.storage.insert_operation(filled_operation)
 
         filled_operation["from"] = addrs["account_id"]
-        filled_operation["to"] = "some_user"
+        filled_operation["to"] = get_exchange_account_id()
 
         filled_operation["incident_id"] = "some_operation_id_4"
         filled_operation["chain_identifier"] = "some_chain_identifier_4"

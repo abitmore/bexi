@@ -355,22 +355,22 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer = self.get_completed_op()
         transfer["incident_id"] = "cbeea30e-2218-4405-9089-86d003e4df81"
         transfer["chain_identifier"] = "chainidentifier_1235"
-        transfer["customer_id"] = "user_name_bla"
+        transfer["customer_id"] = "user_memo_message"
         transfer["from"] = utils.get_exchange_account_id()
         implementations._get_os().insert_operation(transfer)
 
-        history = implementations.get_address_history_from(get_tracking_address(transfer), 1, 0)
+        history = implementations.get_address_history_to(get_tracking_address(transfer), 1, 0)
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test', 'toAddress': 'lykke-dev-autotests:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test', 'toAddress': 'lykke-dev-autotests:user_memo_message', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )
 
         history = implementations.get_address_history_from(utils.get_exchange_account_id(), 1, 0)
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test', 'toAddress': 'lykke-dev-autotests:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test', 'toAddress': 'lykke-dev-autotests:user_memo_message', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )
 
 

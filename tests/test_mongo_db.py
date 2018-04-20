@@ -19,7 +19,9 @@ class TestMongoDB(unittest.TestCase):
 
     def _get_db_config(self):
         config = Config.get_config()["operation_storage"]
-        return config["mongodbtest"]
+        mongodb_config = config["mongodbtest"]
+        mongodb_config["operation_collection"] = mongodb_config.get("operation_collection", "operations")
+        return mongodb_config
 
     def test_not_reachable(self):
         mongodb_config = self._get_db_config()

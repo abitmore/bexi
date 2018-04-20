@@ -207,4 +207,4 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId=fromHW.json[0]["hash"]))
         assert response.status_code == 200
         self.assertEqual(response.json['operationId'],
-                         'bb3fde487de1035c52c0088bbe39fc2ed3fdf573:0')
+                         fromHW.json[0]["hash"])
