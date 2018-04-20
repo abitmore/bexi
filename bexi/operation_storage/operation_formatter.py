@@ -37,6 +37,29 @@ def validate_incident_id(incident_id):
         raise InvalidOperationIdException()
 
 
+def validate_chain_identifier(incident_id):
+    """
+    Validates the given incident id against the configured regular expresssion
+    :param incident_id:
+    :type incident_id:
+    """
+    global INCIDENT_ID_REGEX
+    if INCIDENT_ID_REGEX is None:
+        INCIDENT_ID_REGEX = re.compile(
+            Config.get("operation_storage",
+                       "chain_identifier",
+                       "format",
+                       default="[0-9a-fA-F]+:[0-9]{1}")
+        )
+    try:
+        if incident_id is None:
+            raise InvalidOperationIdException()
+        if INCIDENT_ID_REGEX.match(incident_id) is None:
+            raise InvalidOperationIdException()
+    except KeyError:
+        raise InvalidOperationIdException()
+
+
 def decode_operation(operation):
     """ The given operation comes directly from the blockchain and is here reformatted.
         This is done to better suit the needs of our processing and also due to the fact

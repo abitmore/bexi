@@ -3,7 +3,7 @@ from tests.abstract_tests import ATestOperationStorage
 from bexi import utils
 
 from bexi.wsgi.manage_service.implementations import MemoMatchingFailedException
-from bexi.addresses import get_address_from_operation, create_unique_address, DELIMITER
+from bexi.addresses import get_tracking_address, create_unique_address, DELIMITER
 from bexi.wsgi.manage_service.views import implementations
 from bexi.wsgi.manage_service.implementations import AssetNotFoundException
 from bexi.operation_storage.exceptions import AddressAlreadyTrackedException,\
@@ -121,9 +121,9 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["to"] = "some_dude"
         transfer["fee_value"] = 0
 
-        implementations.observe_address(get_address_from_operation(first))
-        implementations.observe_address(get_address_from_operation(second))
-        implementations.observe_address(get_address_from_operation(third))
+        implementations.observe_address(get_tracking_address(first))
+        implementations.observe_address(get_tracking_address(second))
+        implementations.observe_address(get_tracking_address(third))
 
         implementations._get_os().insert_operation(first)
         implementations._get_os().insert_operation(second)
@@ -344,7 +344,7 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["to"] = utils.get_exchange_account_id()
         implementations._get_os().insert_operation(transfer)
 
-        history = implementations.get_address_history_to(get_address_from_operation(transfer), 1, 0)
+        history = implementations.get_address_history_to(get_tracking_address(transfer), 1, 0)
 
         self.assertEqual(
             history,
@@ -359,11 +359,18 @@ class TestBlockchainApi(ATestOperationStorage):
         transfer["from"] = utils.get_exchange_account_id()
         implementations._get_os().insert_operation(transfer)
 
-        history = implementations.get_address_history_from(get_address_from_operation(transfer), 1, 0)
+        history = implementations.get_address_history_from(get_tracking_address(transfer), 1, 0)
 
         self.assertEqual(
             history,
-            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test:user_name_bla', 'toAddress': 'lykke-dev-autotests', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test', 'toAddress': 'lykke-dev-autotests:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
+        )
+
+        history = implementations.get_address_history_from(utils.get_exchange_account_id(), 1, 0)
+
+        self.assertEqual(
+            history,
+            [{'timestamp': history[0]['timestamp'], 'fromAddress': 'lykke-test', 'toAddress': 'lykke-dev-autotests:user_name_bla', 'assetId': '1.3.121', 'amount': '50000000', 'hash': 'chainidentifier_1235'}]
         )
 
 

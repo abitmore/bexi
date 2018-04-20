@@ -9,6 +9,7 @@ from bexi.connection import requires_blockchain
 from bexi.blockchain_monitor import BlockchainMonitor
 from bitshares.bitshares import BitShares
 from bexi import __VERSION__
+from bexi.utils import get_exchange_account_name
 
 
 class TestIntegration(AFlaskTest):
@@ -85,7 +86,7 @@ class TestIntegration(AFlaskTest):
 
             print(broadcast_transaction)
 
-            return broadcast.json["block_num"]
+            return broadcast.json["block"]
 
         def flag_completed(block_num):
             network = Config.get("network_type")
@@ -148,11 +149,13 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df61"))
         self.assertEqual(response.json["block"], block_num * 10)
 
+        WW = create_unique_address(self.get_customer_id(), "some_user_memo")
+
         block_num = build_sign_and_broadcast(
             {
                 "operationId": "cbeea30e-2218-4405-9089-86d003e4df62",
                 "fromAddress": addressHW,
-                "toAddress": create_unique_address(self.get_customer_id(), "some_user_memo"),
+                "toAddress": WW,
                 "assetId": "1.3.0",
                 "amount": 100000,
                 "includeFee": True
@@ -177,13 +180,31 @@ class TestIntegration(AFlaskTest):
         fromDW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressDW) + "?take=3")
         assert fromDW.status_code == 200
         self.assertEqual(fromDW.json,
-                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': 'lykke-test:'}])
+                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': 'lykke-test'}])
 
         toHW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressHW) + "?take=3")
         assert toHW.status_code == 200
         assert toHW.json == []
 
-        fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressHW) + "?take=3")
+        fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=split_unique_address(addressHW)["account_id"]) + "?take=3")
         assert fromHW.status_code == 200
         self.assertEqual(fromHW.json,
-                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': 'lykke-customer:'}])
+                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': get_exchange_account_name(), 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': WW}])
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df60"))
+        assert response.status_code == 200
+        self.assertEqual(response.json['operationId'],
+                         'cbeea30e-2218-4405-9089-86d003e4df60')
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df61"))
+        assert response.status_code == 200
+        self.assertEqual(response.json['operationId'],
+                         'cbeea30e-2218-4405-9089-86d003e4df61')
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df62"))
+        assert response.status_code == 204
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId=fromHW.json[0]["hash"]))
+        assert response.status_code == 200
+        self.assertEqual(response.json['operationId'],
+                         'bb3fde487de1035c52c0088bbe39fc2ed3fdf573:0')

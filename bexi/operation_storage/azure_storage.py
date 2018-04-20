@@ -4,9 +4,8 @@ from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError,\
     AzureHttpError
 from azure.cosmosdb.table.tableservice import TableService
 from urllib3.exceptions import NewConnectionError
-import hashlib
 
-from ..addresses import split_unique_address
+from ..addresses import split_unique_address, get_tracking_address
 from .exceptions import (
     AddressNotTrackedException,
     AddressAlreadyTrackedException,
@@ -21,7 +20,6 @@ from .interface import (
 from bexi import Config
 import json
 from json.decoder import JSONDecodeError
-from bexi.addresses import get_address_from_operation
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -47,6 +45,12 @@ class AzureOperationsStorage(BasicOperationStorage):
         if not azure_config:
             raise Exception("No azure table storage configuration provided!")
         self._azure_config = azure_config
+
+        # ensure defaults
+        self._azure_config["operation_table"] = self._azure_config.get("operation_table", "operations")
+        self._azure_config["address_table"] = self._azure_config.get("address_table", "address")
+        self._azure_config["status_table"] = self._azure_config.get("status_table", "status")
+        self._azure_config["balances_table"] = self._azure_config.get("balances_table", "balances")
 
         if not self._azure_config["account"]:
             raise Exception("Please include the azure account name in the config")
@@ -290,7 +294,7 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def _ensure_balances(self, operation):
-        affected_address = get_address_from_operation(operation)
+        affected_address = get_tracking_address(operation)
         try:
             self._get_address(affected_address)
         except AddressNotTrackedException:
@@ -421,6 +425,7 @@ class AzureOperationsStorage(BasicOperationStorage):
     @retry_auto_reconnect
     def get_balances(self, take, continuation=None, addresses=None, recalculate=False):
         if recalculate:
+            raise Exception("Currently not supported due to memo change on withdraw")
             return self._get_balances_recalculate(take, continuation, addresses)
         else:
             if continuation is not None:
@@ -528,18 +533,33 @@ class AzureOperationsStorage(BasicOperationStorage):
             if filter_by.get("address"):
                 addrs = split_unique_address(filter_by.pop("address"))
                 return {"customer_id": addrs["customer_id"]}
+            if filter_by.get("from"):
+                addrs = split_unique_address(filter_by.pop("from"))
+                return {"from": addrs["account_id"]}
+            if filter_by.get("to"):
+                addrs = split_unique_address(filter_by.pop("to"))
+                return {"to": addrs["account_id"]}
             if filter_by:
                 raise Exception("Filter not supported")
         return {}
+
+    def _filter_dict_to_string(self, filter_dict, partition_key=None):
+        filter_str = None
+        for key, value in filter_dict.items():
+            if partition_key == key:
+                key = "PartitionKey"
+            if filter_str is not None:
+                delimiter = " and "
+            delimiter = ""
+            filter_str = delimiter + key + " eq '" + value + "'"
+        return filter_str
 
     @retry_auto_reconnect
     def get_operations_in_progress(self, filter_by=None):
         filter_dict = {"status": "in_progress"}
         filter_dict.update(self._parse_filter(filter_by))
 
-        filter_str = "PartitionKey eq '" + filter_dict.get("status") + "'"
-        if filter_dict.get("customer_id"):
-            filter_str = filter_str + " and customer_id eq '" + str(filter_dict.get("customer_id")) + "'"
+        filter_str = self._filter_dict_to_string(filter_dict, "status")
 
         return list(self._service.query_entities(
             self._operation_tables["status"],
@@ -550,9 +570,7 @@ class AzureOperationsStorage(BasicOperationStorage):
         filter_dict = {"status": "completed"}
         filter_dict.update(self._parse_filter(filter_by))
 
-        filter_str = "PartitionKey eq '" + filter_dict.get("status") + "'"
-        if filter_dict.get("customer_id"):
-            filter_str = filter_str + " and customer_id eq '" + str(filter_dict.get("customer_id")) + "'"
+        filter_str = self._filter_dict_to_string(filter_dict, "status")
 
         return list(self._service.query_entities(
             self._operation_tables["status"],
@@ -563,9 +581,7 @@ class AzureOperationsStorage(BasicOperationStorage):
         filter_dict = {"status": "failed"}
         filter_dict.update(self._parse_filter(filter_by))
 
-        filter_str = "PartitionKey eq '" + filter_dict.get("status") + "'"
-        if filter_dict.get("customer_id"):
-            filter_str = filter_str + " and customer_id eq '" + str(filter_dict.get("customer_id")) + "'"
+        filter_str = self._filter_dict_to_string(filter_dict, "status")
 
         return list(self._service.query_entities(
             self._operation_tables["status"],

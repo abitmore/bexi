@@ -8,29 +8,17 @@ operation_storage:
  use: azuretest
  mongodb:
      seeds: 
-         - # insert list of seeds here
+         - localhost:27017
      db: bitshares-operation-storage
-     operation_collection: operations
-     status_collection: status
-     address_collection: address
  mongodbtest:
      seeds: 
          - localhost:27017
-     db: bitshares-operation-storage
-     operation_collection: operations_test
-     status_collection: status_test
-     address_collection: address_test
+     db: bitshares-operation-storage-test
  azure:
-    account: # insert account name
-    key: # insert account key
-    db: lykkebitsharesoperationstorage
-    operation_table: operations
-    status_table: status
-    address_table: address
- azuretest:
     account: lkedevbcnbitshares
     key: Sqvrhc8Y1rPhqiWaDT6k9BNFy2nE57ebi51zTH2jMs0jbZLBKD4wvIsadPU5iH9R0/858CE/TfKaJ5IC5B/Oxw==
     db: lykkebitsharesoperationstorage
-    operation_table: operationstest
-    status_table: statustest
-    address_table: addresstest
+ azuretest:
+    account: lkedevbcnbitshares
+    key: Sqvrhc8Y1rPhqiWaDT6k9BNFy2nE57ebi51zTH2jMs0jbZLBKD4wvIsadPU5iH9R0/858CE/TfKaJ5IC5B/Oxw==
+    db: lykkebitsharesoperationstoragetest
