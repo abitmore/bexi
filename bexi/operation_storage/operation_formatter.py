@@ -12,6 +12,7 @@ from .. import Config
 
 
 INCIDENT_ID_REGEX = None
+CHAIN_IDENTIFIER_REGEX = None
 
 
 def validate_incident_id(incident_id):
@@ -43,9 +44,9 @@ def validate_chain_identifier(incident_id):
     :param incident_id:
     :type incident_id:
     """
-    global INCIDENT_ID_REGEX
-    if INCIDENT_ID_REGEX is None:
-        INCIDENT_ID_REGEX = re.compile(
+    global CHAIN_IDENTIFIER_REGEX
+    if CHAIN_IDENTIFIER_REGEX is None:
+        CHAIN_IDENTIFIER_REGEX = re.compile(
             Config.get("operation_storage",
                        "chain_identifier",
                        "format",
@@ -54,7 +55,7 @@ def validate_chain_identifier(incident_id):
     try:
         if incident_id is None:
             raise InvalidOperationIdException()
-        if INCIDENT_ID_REGEX.match(incident_id) is None:
+        if CHAIN_IDENTIFIER_REGEX.match(incident_id) is None:
             raise InvalidOperationIdException()
     except KeyError:
         raise InvalidOperationIdException()

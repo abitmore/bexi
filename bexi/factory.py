@@ -41,7 +41,10 @@ def get_operation_storage(use=None, purge=None):
                                      connectTimeoutMS=500,
                                      serverSelectionTimeoutMS=1500
                                      )
-        return MongoDBOperationsStorage(mongodb_config=use_config, mongodb_client=mongodb_client, purge=True)
+        if purge is None:
+            return MongoDBOperationsStorage(mongodb_config=use_config, mongodb_client=mongodb_client, purge=True)
+        else:
+            return MongoDBOperationsStorage(mongodb_config=use_config, mongodb_client=mongodb_client, purge=purge)
 
     def get_azure(use_config):
         return AzureOperationsStorage(azure_config=use_config)
