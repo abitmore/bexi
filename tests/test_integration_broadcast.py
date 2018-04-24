@@ -46,6 +46,8 @@ class TestIntegration(AFlaskTest):
 
     @requires_blockchain
     def test_track_balance(self, bitshares_instance=None):
+        store = factory.get_operation_storage(purge=True)
+
         addressDW = self.client.post(url_for('Blockchain.SignService.wallets')).json["publicAddress"]
 
         addressEW = create_unique_address(self.get_customer_id(), "")
@@ -94,7 +96,6 @@ class TestIntegration(AFlaskTest):
 #             connection["keys"] = key
             instance = BitShares(**connection)
 
-            store = factory.get_operation_storage(purge=False)
             irr = instance.rpc.get_dynamic_global_properties().get("last_irreversible_block_num")
             head = instance.rpc.get_dynamic_global_properties().get("head_block_number")
 
@@ -202,9 +203,6 @@ class TestIntegration(AFlaskTest):
                          'cbeea30e-2218-4405-9089-86d003e4df61')
 
         response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df62"))
-        assert response.status_code == 204
-
-        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId=fromHW.json[0]["hash"]))
         assert response.status_code == 200
         self.assertEqual(response.json['operationId'],
-                         fromHW.json[0]["hash"])
+                         'cbeea30e-2218-4405-9089-86d003e4df62')

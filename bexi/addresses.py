@@ -34,7 +34,7 @@ def get_from_address(operation):
         :param operation: operation formatted for operation storage
         :type operation: dict
     """
-    if _is_internal(operation["from"], operation["to"]):
+    if is_internal(operation["from"], operation["to"]):
         # internal transfer
         return create_unique_address(operation["from"], operation["customer_id"])
     else:
@@ -50,7 +50,7 @@ def get_to_address(operation):
         :param operation: operation formatted for operation storage
         :type operation: dict
     """
-    if not _is_internal(operation["from"], operation["to"]):
+    if not is_internal(operation["from"], operation["to"]):
         # no internal transfer
         return create_unique_address(operation["to"], operation["customer_id"])
     else:
@@ -67,13 +67,13 @@ def get_tracking_address(operation):
 
         :returns address as defined in `func`:create_unique_address
     """
-    if _is_internal(operation["from"], operation["to"]):
+    if is_internal(operation["from"], operation["to"]):
         # internal transfer
         return create_unique_address(operation["from"], operation["customer_id"])
-    elif _is_withdraw(operation["from"], operation["to"]):
+    elif is_withdraw(operation["from"], operation["to"]):
         # withdraw
         return create_unique_address(operation["to"], operation["customer_id"])
-    elif _is_deposit(operation["from"], operation["to"]):
+    elif is_deposit(operation["from"], operation["to"]):
         # deposit
         return create_unique_address(operation["to"], operation["customer_id"])
     raise Exception("No operaton concerning this exchange")
@@ -96,13 +96,13 @@ def decide_tracking_address(from_address, to_address):
         from_address = split_unique_address(from_address)
     if type(to_address) == str:
         to_address = split_unique_address(to_address)
-    if _is_internal(from_address, to_address):
+    if is_internal(from_address, to_address):
         # internal transfer
         return split_unique_address(create_unique_address(from_address["account_id"], from_address["customer_id"]))
-    elif _is_withdraw(from_address, to_address):
+    elif is_withdraw(from_address, to_address):
         # withdraw
         return split_unique_address(create_unique_address(to_address["account_id"], to_address["customer_id"]))
-    elif _is_deposit(from_address, to_address):
+    elif is_deposit(from_address, to_address):
         # deposit
         return split_unique_address(create_unique_address(to_address["account_id"], to_address["customer_id"]))
     raise Exception("No operaton concerning this exchange")
@@ -158,7 +158,7 @@ def create_unique_address(account_id_or_name, randomizer=uuid.uuid4):
     return account_id_or_name + DELIMITER + str(randomizer())
 
 
-def _is_withdraw(from_address, to_address):
+def is_withdraw(from_address, to_address):
     if type(from_address) == dict:
         from_address = from_address["account_id"]
     if type(to_address) == dict:
@@ -166,7 +166,7 @@ def _is_withdraw(from_address, to_address):
     return utils.is_exchange_account(from_address) and not utils.is_exchange_account(to_address)
 
 
-def _is_deposit(from_address, to_address):
+def is_deposit(from_address, to_address):
     if type(from_address) == dict:
         from_address = from_address["account_id"]
     if type(to_address) == dict:
@@ -174,7 +174,7 @@ def _is_deposit(from_address, to_address):
     return not utils.is_exchange_account(from_address) and utils.is_exchange_account(to_address)
 
 
-def _is_internal(from_address, to_address):
+def is_internal(from_address, to_address):
     if type(from_address) == dict:
         from_address = from_address["account_id"]
     if type(to_address) == dict:
@@ -198,7 +198,7 @@ def create_memo(from_address, to_address, incident_id):
 
     if address["customer_id"]:
         memo = memo + address["customer_id"]
-    if incident_id and not _is_withdraw(from_address, to_address):
+    if incident_id and not is_withdraw(from_address, to_address):
         if memo != "":
             memo = memo + DELIMITER + incident_id
         else:

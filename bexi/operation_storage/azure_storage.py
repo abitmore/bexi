@@ -383,6 +383,15 @@ class AzureOperationsStorage(BasicOperationStorage):
         # do basics
         operation = super(AzureOperationsStorage, self).insert_operation(operation)
 
+        # check if this is from in_progress to complete (for withdrawals we need to find incident id as its
+        # not stored onchain)
+        try:
+            existing_operation = self.get_operation_by_chain_identifier("in_progress", operation["chain_identifier"])
+            if not existing_operation["incident_id"] == operation["incident_id"] and\
+                    operation["incident_id"] == operation["chain_identifier"]:
+                operation["incident_id"] = existing_operation["incident_id"]
+        except OperationNotFoundException:
+            pass
         try:
             self._insert(operation)
         except DuplicateOperationException as ex:
@@ -406,6 +415,21 @@ class AzureOperationsStorage(BasicOperationStorage):
         else:
             operation = operation_or_incident_id
         self._delete(operation)
+
+    @retry_auto_reconnect
+    def get_operation_by_chain_identifier(self, status, chain_identifier):
+        try:
+            operation = self._service.get_entity(
+                self._operation_tables["status"],
+                status,
+                chain_identifier)
+            operation.pop("PartitionKey")
+            operation.pop("RowKey")
+            operation.pop("Timestamp")
+            operation.pop("etag")
+        except AzureMissingResourceHttpError:
+            raise OperationNotFoundException()
+        return operation
 
     @retry_auto_reconnect
     def get_operation(self, incident_id):

@@ -18,7 +18,8 @@ from ...addresses import (
     get_from_address,
     create_memo,
     get_to_address,
-    create_unique_address)
+    create_unique_address,
+    is_withdraw)
 
 from ...connection import requires_blockchain
 from ... import Config, factory
@@ -221,7 +222,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
                       amount, includeFee, bitshares_instance=None):
     """ Builds a transaction (without signature)
 
-        :param guid operationId: Lykke unique operation ID
+        :param guid incidentId: Lykke unique operation ID
         :param str fromAddress: Source address
         :param str toAddress: Destination address
         :param str assetId: Asset ID to transfer
@@ -336,7 +337,10 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         tx = obtain_raw_tx()
 
     # Add additional/optional information
+    #   - add incident_id as fallback for internal database
+    #   - add decoded memo to avoid double decoding
     tx.update({
+        "incident_id": incidentId,
         "decoded_memo": memo_plain,
     })
 
@@ -373,6 +377,8 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
             op_in_tx=op_in_tx,
             transaction_id=tx["transaction_id"]
         )
+        if tx.get("incident_id", None) is not None:
+            j["incident_id"] = tx["incident_id"]
         return operation_formatter.decode_operation(j)
 
     for op_in_tx, operation in enumerate(tx.get("operations", [])):

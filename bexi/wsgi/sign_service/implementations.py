@@ -25,6 +25,10 @@ def sign(tx, keys):
         signedTransaction["decoded_memo"] = tx["decoded_memo"]
     except KeyError:
         pass
+    try:
+        signedTransaction["incident_id"] = tx["incident_id"]
+    except KeyError:
+        pass
 
     return dict(
         signedTransaction=json.dumps(signedTransaction)

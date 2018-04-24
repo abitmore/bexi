@@ -101,7 +101,10 @@ def decode_operation(operation):
     )
 
     if not memo["incident_id"]:
-        memo["incident_id"] = chain_identifier
+        if operation.get("incident_id", None) is not None:
+            memo["incident_id"] = operation["incident_id"]
+        else:
+            memo["incident_id"] = chain_identifier
 
     data = {
         "chain_identifier": chain_identifier,
