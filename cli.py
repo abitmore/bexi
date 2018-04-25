@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 import click
-from bexi.wsgi.app import (
-    get_manage_service_app,
-    get_sign_service_app,
-    get_blockchain_monitor_service_app
-)
 from bexi import Config
 from bexi.connection import requires_blockchain
-from bexi.blockchain_monitor import BlockchainMonitor
+
 import logging
 import threading
 
@@ -26,6 +21,8 @@ def wsgi(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_manage_service_app, get_sign_service_app
+
     app = get_manage_service_app()
     app = get_sign_service_app(app)
     app.logger.info("Starting " + config["name"] + " with manage and sign service ...")
@@ -39,6 +36,8 @@ def sign_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_sign_service_app
+
     app = get_sign_service_app()
     app.logger.info("Starting " + config["name"] + " sign service ...")
     app.run(host=host, port=port)
@@ -51,6 +50,8 @@ def manage_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_manage_service_app
+
     app = get_manage_service_app()
     app.logger.info("Starting " + config["name"] + " manage service ...")
     app.run(host=host, port=port)
@@ -62,6 +63,9 @@ def manage_service(host, port):
 def blockchain_monitor_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
+
+    from bexi.wsgi.app import get_blockchain_monitor_service_app
+
     app = get_blockchain_monitor_service_app()
 
     logging.getLogger(__name__).info("Starting BitShares blockchain monitor as coroutines ...")
@@ -90,6 +94,8 @@ def only_blockchain_monitor_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_blockchain_monitor_service_app
+
     app = get_blockchain_monitor_service_app()
     app.logger.info("Starting " + config["name"] + " blockchain monitor service ...")
     app.run(host=host, port=port)
@@ -97,6 +103,8 @@ def only_blockchain_monitor_service(host, port):
 
 @requires_blockchain
 def start_block_monitor():
+    from bexi.blockchain_monitor import BlockchainMonitor
+
     monitor = BlockchainMonitor()
     monitor.listen()
 

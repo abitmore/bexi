@@ -136,18 +136,35 @@ class BlockchainMonitor(object):
                 last block) and "irreversible" (the block that is confirmed by
                 2/3 of all block producers and is thus irreversible)
         """
-        for block in Blockchain(
-            mode=self.watch_mode,
-            max_block_wait_repetition=12,
-            bitshares_instance=self.bitshares
-        ).blocks(
-            start=self.start_block,
-            stop=self.stop_block
-        ):
-            logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
+        retry = True
+        while (retry):
+            retry = False
+            for block in Blockchain(
+                mode=self.watch_mode,
+                max_block_wait_repetition=12,
+                bitshares_instance=self.bitshares
+            ).blocks(
+                start=self.start_block,
+                stop=self.stop_block
+            ):
+                logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
 
-            self.process_block(block)
-            self.storage.set_last_head_block_num(block["block_num"])
+                last_head_block = self.storage.get_last_head_block_num()
+
+                if last_head_block == 0 or block["block_num"] == last_head_block + 1:
+                    # no blocks missed
+                    self.process_block(block)
+                    self.storage.set_last_head_block_num(block["block_num"])
+                elif block["block_num"] == last_head_block:
+                    # possible on connection error, skip block
+                    continue
+                else:
+                    self.start_block = last_head_block + 1
+                    if self.start_block > self.stop_block:
+                        logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Stop block already reached, shutting down ...")
+                    else:
+                        logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Retry with next block " + str(last_head_block + 1))
+                        retry = True
 
     def process_block(self, block):
         """ Process block and send transactions to
@@ -300,4 +317,4 @@ class BlockchainMonitor(object):
         try:
             self.storage.insert_or_update_operation(operation)
         except DuplicateOperationException:
-            pass
+            logging.getLogger(__name__).debug("Storage already contained operation, skipping ...")

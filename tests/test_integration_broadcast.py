@@ -206,3 +206,14 @@ class TestIntegration(AFlaskTest):
         assert response.status_code == 200
         self.assertEqual(response.json['operationId'],
                          'cbeea30e-2218-4405-9089-86d003e4df62')
+
+        response = self.client.delete(url_for('Blockchain.Api.unobserve_address', address=addressDW))
+        assert response.status_code == 200
+
+        response = self.client.delete(url_for('Blockchain.Api.unobserve_address', address=addressHW))
+        assert response.status_code == 200
+
+        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
+        assert response.status_code == 200
+        self.assertEqual(response.json["items"],
+                         [])
