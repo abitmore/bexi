@@ -112,14 +112,6 @@ class BlockchainMonitor(object):
         self.start_block = kwargs.pop("start_block", None)
         self.stop_block = kwargs.pop("stop_block", None)
 
-        last_block = self.storage.get_last_head_block_num()
-
-        logging.getLogger(__name__).debug("Init with start=" + str(self.start_block) + " stop=" + str(self.stop_block) + " last=" + str(last_block))
-
-        if not self.start_block:
-            if last_block > 0:
-                self.start_block = last_block + 1
-
     def unlock_wallet(self, pwd):
         """ Unlock the pybitshares wallet with the provided password
         """
@@ -136,6 +128,22 @@ class BlockchainMonitor(object):
                 last block) and "irreversible" (the block that is confirmed by
                 2/3 of all block producers and is thus irreversible)
         """
+        last_block = self.storage.get_last_head_block_num()
+
+        logging.getLogger(__name__).debug("Start listen with start=" + str(self.start_block) + " stop=" + str(self.stop_block) + " last=" + str(last_block))
+
+        # if set to true, block numbers may not be consecutively
+        self.allow_block_jump = False
+
+        if not self.start_block:
+            if last_block > 0:
+                self.start_block = last_block + 1
+        else:
+            if not self.start_block == self.storage.get_last_head_block_num() + 1:
+                # allow first block to jump
+                self.allow_block_jump = True
+                logging.getLogger(__name__).warning("Force listen with different block than last in storage (storage=" + str(last_block) + ", given=" + str(self.start_block) + ")")
+
         retry = True
         while (retry):
             retry = False
@@ -151,7 +159,10 @@ class BlockchainMonitor(object):
 
                 last_head_block = self.storage.get_last_head_block_num()
 
-                if last_head_block == 0 or block["block_num"] == last_head_block + 1:
+                if last_head_block == 0 or\
+                        block["block_num"] == last_head_block + 1 or\
+                        (self.allow_block_jump and last_head_block < block["block_num"]):
+                    self.allow_block_jump = False
                     # no blocks missed
                     self.process_block(block)
                     self.storage.set_last_head_block_num(block["block_num"])
