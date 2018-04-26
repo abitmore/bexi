@@ -30,14 +30,19 @@ def isalive(bitshares_instance):
     last_block = bitshares_instance.rpc.get_dynamic_global_properties().get("last_irreversible_block_num")
     last_block_stored = _get_os().get_last_head_block_num()
 
+    issueIndicators = None
     if last_block_stored != 0 and last_block_stored < last_block - 5:
-        raise BlockChainMonitorOutOfSyncExcpetion(json.dumps(
-            {
-                "description": "Blockchain Monitor out of sync",
-                "last_processed": last_block_stored,
-                "last_irreversible_block_num": last_block
-            }
-        ))
+        issueIndicators = [
+            {"type": "unknown",
+             "value": "Blockchain Monitor out of sync"}
+        ]
+#         raise BlockChainMonitorOutOfSyncExcpetion(json.dumps(
+#             {
+#                 "description": "Blockchain Monitor out of sync",
+#                 "last_processed": last_block_stored,
+#                 "last_irreversible_block_num": last_block
+#             }
+#         ))
 
     info = {
         "name": Config.get("wsgi", "name"),
@@ -49,5 +54,7 @@ def isalive(bitshares_instance):
             "last_processed": last_block_stored,
             "last_irreversible_block_num": last_block}
     }
+    if issueIndicators is not None:
+        info["issueIndicators"] = issueIndicators
 
     return info

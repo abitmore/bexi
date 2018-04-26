@@ -20,6 +20,7 @@ from .interface import (
 from bexi import Config
 import json
 from json.decoder import JSONDecodeError
+import hashlib
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -160,7 +161,10 @@ class AzureOperationsStorage(BasicOperationStorage):
         return with_ck
 
     def _short_digit_hash(self, value):
-        return str(abs(hash(value)) % (10 ** Config.get("operation_storage", "short_hash_digits", 3)))
+        checker = hashlib.sha256()
+        checker.update(value.encode())
+        short_hash = checker.hexdigest()
+        return short_hash[0:Config.get("operation_storage", "short_hash_digits", 3)]
 
     @retry_auto_reconnect
     def track_address(self, address, usage="balance"):
