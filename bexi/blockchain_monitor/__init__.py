@@ -171,7 +171,7 @@ class BlockchainMonitor(object):
                     continue
                 else:
                     self.start_block = last_head_block + 1
-                    if self.start_block > self.stop_block:
+                    if self.stop_block is not None and self.start_block > self.stop_block:
                         logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Stop block already reached, shutting down ...")
                     else:
                         logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Retry with next block " + str(last_head_block + 1))
