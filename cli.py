@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import click
+import time
 from bexi import Config
 from bexi.connection import requires_blockchain
 
@@ -104,9 +105,14 @@ def only_blockchain_monitor_service(host, port):
 @requires_blockchain
 def start_block_monitor():
     from bexi.blockchain_monitor import BlockchainMonitor
-
-    monitor = BlockchainMonitor()
-    monitor.listen()
+    while (True):
+        try:
+            monitor = BlockchainMonitor()
+            monitor.listen()
+        except Exception as e:
+            logging.getLogger(__name__).info("Blockchain monitor failed, exception below. Retrying after sleep")
+            logging.getLogger(__name__).exception(e)
+            time.sleep(1.5)
 
 
 # @main.command()
