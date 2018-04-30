@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 import click
 import time
-from bexi import Config
+from bexi import Config, factory
 from bexi.connection import requires_blockchain
 
 import logging
 import threading
+import json
+from pprint import pprint
+from bexi.operation_storage.exceptions import OperationNotFoundException
 
 config = Config.get("wsgi")
 
@@ -113,6 +116,78 @@ def start_block_monitor():
             logging.getLogger(__name__).info("Blockchain monitor failed, exception below. Retrying after sleep")
             logging.getLogger(__name__).exception(e)
             time.sleep(1.5)
+
+
+@main.command()
+@click.option("--txid")
+@click.option("--customerid")
+@click.option("--contains")
+@click.option("--status")
+@click.option("--incidentid")
+def find(txid, customerid, contains, status, incidentid):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    storage = factory.get_operation_storage()
+
+    def get_all():
+        return (storage.get_operations_completed() +
+                storage.get_operations_in_progress() +
+                storage.get_operations_failed())
+    operations = []
+
+    if contains:
+        for op in get_all():
+            print(op)
+            if status is not None and not status == op["status"]:
+                continue
+
+            if contains in str(op):
+                operations.append(op)
+
+    if incidentid:
+            for op in list(storage._service.query_entities(
+                    storage._operation_tables["incident"])):
+                if incidentid in str(op):
+                    operations.append(op)
+
+    print("---------- finding transfers ---------------")
+    print("found: " + str(len(operations)))
+
+    for op in operations:
+        pprint(op)
+
+
+@main.command()
+@click.option("--take")
+def balance(take=100):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    pprint(factory.get_operation_storage().get_balances(take))
+
+
+@main.command()
+@click.option("--take")
+def balance_calc(take=100):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    pprint(factory.get_operation_storage()._get_balances_recalculate(take))
+
+
+@main.command()
+def tracked():
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    storage = factory.get_operation_storage()
+
+    pprint(list(storage._service.query_entities(storage._azure_config["address_table"] + "balance")))
 
 
 # @main.command()

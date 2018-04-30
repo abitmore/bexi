@@ -21,6 +21,7 @@ from bexi import Config
 import json
 from json.decoder import JSONDecodeError
 import hashlib
+import zlib
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -161,10 +162,17 @@ class AzureOperationsStorage(BasicOperationStorage):
         return with_ck
 
     def _short_digit_hash(self, value):
-        checker = hashlib.sha256()
-        checker.update(value.encode())
-        short_hash = checker.hexdigest()
-        return short_hash[0:Config.get("operation_storage", "short_hash_digits", 3)]
+        hash_type = Config.get("operation_storage", "key_hash", "type", default="crc32")
+
+        if hash_type == "crc32":
+            short_hash = hex(zlib.crc32(value.encode(encoding='UTF-8')))
+            short_hash = short_hash[2:len(short_hash)]
+
+        elif hash_type == "sha256":
+            checker = hashlib.sha256()
+            checker.update(value.encode(encoding='UTF-8'))
+            short_hash = checker.hexdigest()
+        return short_hash[0:Config.get("operation_storage", "key_hash", "digits", 3)]
 
     @retry_auto_reconnect
     def track_address(self, address, usage="balance"):
@@ -199,7 +207,7 @@ class AzureOperationsStorage(BasicOperationStorage):
     @retry_auto_reconnect
     def _get_address(self, address, usage="balance"):
         try:
-            self._service.get_entity(
+            return self._service.get_entity(
                 self._azure_config["address_table"] + usage,
                 self._short_digit_hash(address),
                 address)

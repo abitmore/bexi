@@ -4,7 +4,7 @@ logs:
     level: DEBUG
 
 wsgi:
- name: bexi
- host: localhost
- port: 5000
- detailed_error: True
+    name: bexi
+    host: localhost
+    port: 5000
+    detailed_error: True

@@ -147,11 +147,17 @@ class BlockchainMonitor(object):
         retry = True
         while (retry):
             retry = False
-            for block in Blockchain(
+
+            block_listener = Blockchain(
                 mode=self.watch_mode,
                 max_block_wait_repetition=12,
                 bitshares_instance=self.bitshares
-            ).blocks(
+            )
+
+            if not block_listener.mode == "last_irreversible_block_num":
+                block_listener.mode = "last_irreversible_block_num"
+
+            for block in block_listener.blocks(
                 start=self.start_block,
                 stop=self.stop_block
             ):

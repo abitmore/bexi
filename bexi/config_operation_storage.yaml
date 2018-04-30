@@ -4,19 +4,17 @@ operation_storage:
   wait_in_ms: 0
  incident_id:
     format: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"
- short_hash_digits: 3
- use: azuretest
- mongodb:
-     seeds: 
-         - localhost:27017
-     db: bitshares-operation-storage
+ key_hash:
+    digits: 3
+    type: crc32
+ use: azure
  mongodbtest:
      seeds: 
          - localhost:27017
      db: bitshares-operation-storage-test
- azure:
-    account: lkedevbcnbitshares
-    key: Sqvrhc8Y1rPhqiWaDT6k9BNFy2nE57ebi51zTH2jMs0jbZLBKD4wvIsadPU5iH9R0/858CE/TfKaJ5IC5B/Oxw==
+ azureauto:
+    account: bitsharesdevautotests
+    key: 0H3WReLsK1GmDU8axor7M3lz4xuAzgdPrqy597AcoCZ5+4kcNFxJ2QoMM52Uz2nRRV77oZ1voKGxtH6rJCaXVw==
     db: lykkebitsharesoperationstorage
  azuretest:
     account: lkedevbcnbitshares
