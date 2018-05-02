@@ -5,7 +5,7 @@ from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError,\
 from azure.cosmosdb.table.tableservice import TableService
 from urllib3.exceptions import NewConnectionError
 
-from ..addresses import split_unique_address, get_tracking_address
+from ..addresses import split_unique_address, get_tracking_address, ensure_address_format
 from .exceptions import (
     AddressNotTrackedException,
     AddressAlreadyTrackedException,
@@ -22,6 +22,7 @@ import json
 from json.decoder import JSONDecodeError
 import hashlib
 import zlib
+import logging
 
 
 class AzureOperationsStorage(BasicOperationStorage):
@@ -176,13 +177,13 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def track_address(self, address, usage="balance"):
-        split = split_unique_address(address)
-        if not split.get("customer_id") or not split.get("account_id"):
-            raise OperationStorageException()
+        address = ensure_address_format(address)
         try:
+            short_hash = self._short_digit_hash(address)
+            logging.getLogger(__name__).debug("track_address with " + str(address) + ", hash " + str(short_hash))
             self._service.insert_entity(
                 self._azure_config["address_table"] + usage,
-                {"PartitionKey": self._short_digit_hash(address),
+                {"PartitionKey": short_hash,
                  "RowKey": address,
                  "address": address,
                  "usage": usage}
@@ -192,10 +193,13 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def untrack_address(self, address, usage="balance"):
+        address = ensure_address_format(address)
         try:
+            short_hash = self._short_digit_hash(address)
+            logging.getLogger(__name__).debug("untrack_address with " + str(address) + ", hash " + str(short_hash))
             self._service.delete_entity(
                 self._azure_config["address_table"] + usage,
-                self._short_digit_hash(address),
+                short_hash,
                 address)
             try:
                 self._delete_balance(address)
@@ -207,9 +211,11 @@ class AzureOperationsStorage(BasicOperationStorage):
     @retry_auto_reconnect
     def _get_address(self, address, usage="balance"):
         try:
+            short_hash = self._short_digit_hash(address)
+            logging.getLogger(__name__).debug("_get_address with " + str(address) + ", hash " + str(short_hash))
             return self._service.get_entity(
                 self._azure_config["address_table"] + usage,
-                self._short_digit_hash(address),
+                short_hash,
                 address)
         except AzureMissingResourceHttpError:
             raise AddressNotTrackedException()
@@ -224,6 +230,7 @@ class AzureOperationsStorage(BasicOperationStorage):
                     new_operation["timestamp"] = tmp["timestamp"]
                     new_operation["status"] = status
                     new_operation = self._get_with_ck(variant, new_operation)
+                logging.getLogger(__name__).debug("_update: Table " + self._operation_tables[variant] + " PartitionKey " + new_operation["PartitionKey"] + " " + new_operation["RowKey"])
                 if variant == "status":
                     # needs delete and insert
                     self._service.delete_entity(
@@ -251,6 +258,8 @@ class AzureOperationsStorage(BasicOperationStorage):
                     raise AzureMissingResourceHttpError()
                 if not to_insert["RowKey"]:
                     raise AzureMissingResourceHttpError()
+
+                logging.getLogger(__name__).debug("_insert: Table " + self._operation_tables[variant] + " PartitionKey " + to_insert["PartitionKey"] + " " + to_insert["RowKey"])
                 self._service.insert_entity(
                     self._operation_tables[variant],
                     to_insert
@@ -307,6 +316,7 @@ class AzureOperationsStorage(BasicOperationStorage):
     @retry_auto_reconnect
     def _ensure_balances(self, operation):
         affected_address = get_tracking_address(operation)
+        logging.getLogger(__name__).debug("_ensure_balances: with " + operation["chain_identifier"] + " for address " + str(affected_address))
         try:
             self._get_address(affected_address)
         except AddressNotTrackedException:
@@ -398,24 +408,42 @@ class AzureOperationsStorage(BasicOperationStorage):
         # check if this is from in_progress to complete (for withdrawals we need to find incident id as its
         # not stored onchain)
         try:
+            logging.getLogger(__name__).debug("insert_or_update_operation: check if in_progress with " + str(operation["chain_identifier"]) + " exists")
             existing_operation = self.get_operation_by_chain_identifier("in_progress", operation["chain_identifier"])
+            logging.getLogger(__name__).debug("insert_or_update_operation: found existing in_progress operation")
             if not existing_operation["incident_id"] == operation["incident_id"] and\
                     operation["incident_id"] == operation["chain_identifier"]:
+                logging.getLogger(__name__).debug("insert_or_update_operation: using preset incident_id " + str(existing_operation["incident_id"]))
                 operation["incident_id"] = existing_operation["incident_id"]
         except OperationNotFoundException:
-            pass
-        try:
-            self._insert(operation)
-        except DuplicateOperationException as ex:
-            # could be an update to completed ...
+            existing_operation = None
+
+        if existing_operation is None:
+            try:
+                logging.getLogger(__name__).debug("insert_or_update_operation: attempting insert")
+                self._insert(operation)
+
+                if operation["status"] == "completed":
+                    self._ensure_balances(operation)
+            except DuplicateOperationException as ex:
+                logging.getLogger(__name__).debug("insert_or_update_operation: fallback to update")
+                # could be an update to completed ...
+                if operation.get("block_num"):
+                    try:
+                        operation.pop("status")
+                        self.flag_operation_completed(operation)
+                    except OperationNotFoundException:
+                        raise ex
+                else:
+                    raise ex
+        else:
+            logging.getLogger(__name__).debug("insert_or_update_operation: attempting update")
             if operation.get("block_num"):
                 try:
                     operation.pop("status")
                     self.flag_operation_completed(operation)
                 except OperationNotFoundException:
                     raise ex
-            else:
-                raise ex
 
     @retry_auto_reconnect
     def delete_operation(self, operation_or_incident_id):
@@ -446,9 +474,11 @@ class AzureOperationsStorage(BasicOperationStorage):
     @retry_auto_reconnect
     def get_operation(self, incident_id):
         try:
+            short_hash = self._short_digit_hash(incident_id)
+            logging.getLogger(__name__).debug("get_operation with " + str(incident_id) + ", hash " + str(short_hash))
             operation = self._service.get_entity(
                 self._operation_tables["incident"],
-                self._short_digit_hash(incident_id),
+                short_hash,
                 incident_id)
             operation.pop("PartitionKey")
             operation.pop("RowKey")

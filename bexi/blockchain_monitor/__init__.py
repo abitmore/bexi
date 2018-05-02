@@ -13,6 +13,10 @@ from bitsharesbase.signedtransactions import Signed_Transaction
 import logging
 
 
+class BlockchainMonitorRetryException(Exception):
+    pass
+
+
 class BlockchainMonitor(object):
     """ The BlockchainMonitor Class is used to listen to the BitShares blockchain
         and react on transfers to the monitored account (as per the configuration)
@@ -157,31 +161,35 @@ class BlockchainMonitor(object):
             if not block_listener.mode == "last_irreversible_block_num":
                 block_listener.mode = "last_irreversible_block_num"
 
-            for block in block_listener.blocks(
-                start=self.start_block,
-                stop=self.stop_block
-            ):
-                logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
+            try:
+                for block in block_listener.blocks(
+                    start=self.start_block,
+                    stop=self.stop_block
+                ):
+                    logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
 
-                last_head_block = self.storage.get_last_head_block_num()
+                    last_head_block = self.storage.get_last_head_block_num()
 
-                if last_head_block == 0 or\
-                        block["block_num"] == last_head_block + 1 or\
-                        (self.allow_block_jump and last_head_block < block["block_num"]):
-                    self.allow_block_jump = False
-                    # no blocks missed
-                    self.process_block(block)
-                    self.storage.set_last_head_block_num(block["block_num"])
-                elif block["block_num"] == last_head_block:
-                    # possible on connection error, skip block
-                    continue
-                else:
-                    self.start_block = last_head_block + 1
-                    if self.stop_block is not None and self.start_block > self.stop_block:
-                        logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Stop block already reached, shutting down ...")
+                    if last_head_block == 0 or\
+                            block["block_num"] == last_head_block + 1 or\
+                            (self.allow_block_jump and last_head_block < block["block_num"]):
+                        self.allow_block_jump = False
+                        # no blocks missed
+                        self.process_block(block)
+                        self.storage.set_last_head_block_num(block["block_num"])
+                    elif block["block_num"] == last_head_block:
+                        # possible on connection error, skip block
+                        continue
                     else:
-                        logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Retry with next block " + str(last_head_block + 1))
-                        retry = True
+                        self.start_block = last_head_block + 1
+                        if self.stop_block is not None and self.start_block > self.stop_block:
+                            logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Stop block already reached, shutting down ...")
+                            return
+                        else:
+                            logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Retry with next block " + str(last_head_block + 1))
+                            raise BlockchainMonitorRetryException()
+            except BlockchainMonitorRetryException:
+                retry = True
 
     def process_block(self, block):
         """ Process block and send transactions to

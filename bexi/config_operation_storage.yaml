@@ -13,6 +13,10 @@ operation_storage:
          - localhost:27017
      db: bitshares-operation-storage-test
  azureauto:
+    account: bitsharesdev
+    key: 3EhS8fLDZNKbS/O6DSIzbWZuU+PwClRAgmFYViDP1L/INlTnR/GW+2D06BTmB02pZTzERhidqXTgDaJ7pmajLg==
+    db: lykkebitsharesoperationstorage
+ azure:
     account: bitsharesdevautotests
     key: 0H3WReLsK1GmDU8axor7M3lz4xuAzgdPrqy597AcoCZ5+4kcNFxJ2QoMM52Uz2nRRV77oZ1voKGxtH6rJCaXVw==
     db: lykkebitsharesoperationstorage

@@ -2,7 +2,7 @@ from flask.helpers import url_for
 
 from tests.abstract_tests import AFlaskTest, ATestOperationStorage
 from bexi import Config, utils
-from bexi.addresses import create_unique_address, get_address_from_operation
+from bexi.addresses import create_unique_address
 from time import sleep
 import json
 from bexi.wsgi.manage_service import implementations

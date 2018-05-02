@@ -82,13 +82,15 @@ def blockchain_monitor_service(host, port):
 
 
 @main.command()
-def only_blockchain_monitor():
+@click.option("--start")
+@click.option("--stop")
+def only_blockchain_monitor(start, stop):
     Config.load(["config_bitshares_connection.yaml",
                  "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
     logging.getLogger(__name__).info("Starting BitShares blockchain monitor ...")
-    start_block_monitor()
+    start_block_monitor(start, stop)
 
 
 @main.command()
@@ -106,16 +108,26 @@ def only_blockchain_monitor_service(host, port):
 
 
 @requires_blockchain
-def start_block_monitor():
+def start_block_monitor(start=None, stop=None):
     from bexi.blockchain_monitor import BlockchainMonitor
-    while (True):
+    retry = True
+    while (retry):
+        retry = stop is None
         try:
             monitor = BlockchainMonitor()
+
+            if start is not None:
+                monitor.start_block = start
+            if stop is not None:
+                monitor.stop_block = stop
+
             monitor.listen()
         except Exception as e:
             logging.getLogger(__name__).info("Blockchain monitor failed, exception below. Retrying after sleep")
             logging.getLogger(__name__).exception(e)
             time.sleep(1.5)
+
+    logging.getLogger(__name__).error("Monitoring done")
 
 
 @main.command()

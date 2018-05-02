@@ -9,7 +9,12 @@ import collections
 import json
 
 
-__VERSION__ = "0.1"
+def get_version():
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", 'VERSION')) as version_file:
+        return version_file.read().strip()
+
+
+__VERSION__ = get_version()
 
 
 class Config(dict):

@@ -108,6 +108,23 @@ def decide_tracking_address(from_address, to_address):
     raise Exception("No operaton concerning this exchange")
 
 
+def ensure_address_format(address):
+    """
+        Ensures that the address has the correct format name:uuid
+
+        :param address: address to be checked
+        :type address: address
+
+        :returns properly formatted address
+    """
+    if type(address) == str:
+        if not address.startswith("1.2."):
+            return address
+        address = split_unique_address(address)
+    assert type(address) == dict
+    return create_unique_address(address["account_id"], address["customer_id"])
+
+
 @requires_blockchain
 def _account_name_to_id(account_name, bitshares_instance):
     return Account(account_name, bitshares_instance=bitshares_instance)["id"]

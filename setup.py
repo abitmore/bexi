@@ -1,22 +1,24 @@
 #!/usr/bin/env python
 
-import bexi
-
 from setuptools import setup, find_packages
 import sys
+import os
 
 assert sys.version_info[0] == 3, "We require Python > 3"
 
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'VERSION')) as version_file:
+    version = version_file.read().strip()
+
 setup(
     name='bexi',
-    version=bexi.__VERSION__,
+    version=version,
     description=(
         'BitShares Exchange Integration (BEXI).'
         'A toolkit that allows to deal with deposits and withdrawals on'
         'the BitShares Blockchain.'
     ),
     long_description=open('README.rst').read(),
-    download_url='https://github.com/blockchainbv/bexi/tarball/' + bexi.__VERSION__,
+    download_url='https://github.com/blockchainbv/bexi/tarball/' + version,
     author='Blockchain BV',
     author_email='info@BlockchainBV.com',
     maintainer='Blockchain Projects BV',
