@@ -123,14 +123,22 @@ class AzureOperationsStorage(BasicOperationStorage):
             time.sleep(0.1)
 
     def _create_operations_storage(self, purge):
-        self._operation_varients = ["incident", "status"]  #  "customer"
+        self._operation_varients = ["incident", "statuscompleted", "statusfailed", "statusinprogress"]  #  "customer"
         self._operation_tables = {}
         for variant in self._operation_varients:
             self._operation_tables[variant] = self._azure_config["operation_table"] + variant
 
         self._operation_prep = {
-            "status": lambda op: {
-                "PartitionKey": op["status"],
+            "statusinprogress": lambda op: {
+                "PartitionKey": self._short_digit_hash(op["chain_identifier"]),
+                "RowKey": op["chain_identifier"]
+            },
+            "statuscompleted": lambda op: {
+                "PartitionKey": self._short_digit_hash(op["chain_identifier"]),
+                "RowKey": op["chain_identifier"]
+            },
+            "statusfailed": lambda op: {
+                "PartitionKey": self._short_digit_hash(op["chain_identifier"]),
                 "RowKey": op["chain_identifier"]
             },
             "customer": lambda op: {
@@ -222,28 +230,50 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     def _update(self, operation, status=None):
         try:
-            for variant in self._operation_varients:
-                operation = self._get_with_ck(variant, operation)
-                new_operation = operation.copy()
-                if status:
-                    tmp = self.get_operation(operation["incident_id"])
-                    new_operation["timestamp"] = tmp["timestamp"]
-                    new_operation["status"] = status
-                    new_operation = self._get_with_ck(variant, new_operation)
-                logging.getLogger(__name__).debug("_update: Table " + self._operation_tables[variant] + " PartitionKey " + new_operation["PartitionKey"] + " " + new_operation["RowKey"])
-                if variant == "status":
-                    # needs delete and insert
-                    self._service.delete_entity(
-                        self._operation_tables[variant],
-                        operation["PartitionKey"],
-                        operation["RowKey"])
-                    self._service.insert_entity(
-                        self._operation_tables[variant],
-                        new_operation)
-                else:
-                    self._service.update_entity(
-                        self._operation_tables[variant],
-                        new_operation)
+            mapping = {"in_progress": "statusinprogress",
+                       "completed": "statuscompleted",
+                       "failed": "statusfailed"}
+
+            operation = self._get_with_ck("incident", operation.copy())
+            new_operation = operation
+            if status:
+                tmp = self.get_operation(operation["incident_id"])
+                new_operation["timestamp"] = tmp["timestamp"]
+                new_operation["status"] = status
+                new_operation = self._get_with_ck("incident", new_operation)
+
+            logging.getLogger(__name__).debug("_update: Table " + self._operation_tables["incident"] + " PartitionKey " + new_operation["PartitionKey"] + " " + new_operation["RowKey"])
+
+            self._service.update_entity(
+                self._operation_tables["incident"],
+                new_operation)
+
+            operation = self._get_with_ck("statuscompleted", operation.copy())
+            new_operation = operation
+            if status:
+                tmp = self.get_operation(operation["incident_id"])
+                new_operation["timestamp"] = tmp["timestamp"]
+                new_operation["status"] = status
+                new_operation = self._get_with_ck("statuscompleted", new_operation)
+            self._service.update_entity(
+                self._operation_tables["statuscompleted"],
+                new_operation)
+
+            logging.getLogger(__name__).debug("_update: Table " + self._operation_tables["statuscompleted"] + " PartitionKey " + new_operation["PartitionKey"] + " " + new_operation["RowKey"])
+
+            if status:
+                # needs delete and insert
+                self._service.delete_entity(
+                    self._operation_tables[mapping[operation["status"]]],
+                    operation["PartitionKey"],
+                    operation["RowKey"])
+                self._service.insert_entity(
+                    self._operation_tables[mapping[new_operation["status"]]],
+                    new_operation)
+            else:
+                self._service.update_entity(
+                    self._operation_tables[mapping[new_operation["status"]]],
+                    new_operation)
         except AzureMissingResourceHttpError:
             raise OperationNotFoundException()
         except AzureConflictHttpError:
@@ -458,10 +488,13 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def get_operation_by_chain_identifier(self, status, chain_identifier):
+        mapping = {"in_progress": "statusinprogress",
+                   "completed": "statuscompleted",
+                   "failed": "statusfailed"}
         try:
             operation = self._service.get_entity(
-                self._operation_tables["status"],
-                status,
+                self._operation_tables[mapping[status]],
+                self._short_digit_hash(chain_identifier),
                 chain_identifier)
             operation.pop("PartitionKey")
             operation.pop("RowKey")
@@ -622,35 +655,47 @@ class AzureOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def get_operations_in_progress(self, filter_by=None):
-        filter_dict = {"status": "in_progress"}
+        mapping = {"in_progress": "statusinprogress",
+                   "completed": "statuscompleted",
+                   "failed": "statusfailed"}
+
+        filter_dict = {}
         filter_dict.update(self._parse_filter(filter_by))
 
         filter_str = self._filter_dict_to_string(filter_dict, "status")
 
         return list(self._service.query_entities(
-            self._operation_tables["status"],
+            self._operation_tables[mapping["in_progress"]],
             filter_str))
 
     @retry_auto_reconnect
     def get_operations_completed(self, filter_by=None):
-        filter_dict = {"status": "completed"}
+        mapping = {"in_progress": "statusinprogress",
+                   "completed": "statuscompleted",
+                   "failed": "statusfailed"}
+
+        filter_dict = {}
         filter_dict.update(self._parse_filter(filter_by))
 
         filter_str = self._filter_dict_to_string(filter_dict, "status")
 
         return list(self._service.query_entities(
-            self._operation_tables["status"],
+            self._operation_tables[mapping["completed"]],
             filter_str))
 
     @retry_auto_reconnect
     def get_operations_failed(self, filter_by=None):
-        filter_dict = {"status": "failed"}
+        mapping = {"in_progress": "statusinprogress",
+                   "completed": "statuscompleted",
+                   "failed": "statusfailed"}
+
+        filter_dict = {}
         filter_dict.update(self._parse_filter(filter_by))
 
         filter_str = self._filter_dict_to_string(filter_dict, "status")
 
         return list(self._service.query_entities(
-            self._operation_tables["status"],
+            self._operation_tables[mapping["failed"]],
             filter_str))
 
     @retry_auto_reconnect
