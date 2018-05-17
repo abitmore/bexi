@@ -7,6 +7,7 @@ from urllib3.exceptions import NewConnectionError
 
 from ..addresses import split_unique_address, get_tracking_address, ensure_address_format
 from .exceptions import (
+    BalanceConcurrentException,
     AddressNotTrackedException,
     AddressAlreadyTrackedException,
     InputInvalidException,
@@ -263,21 +264,28 @@ class AzureOperationsStorage(BasicOperationStorage):
 
             if status:
                 # needs delete and insert
-                self._service.delete_entity(
-                    self._operation_tables[mapping[operation["status"]]],
-                    operation["PartitionKey"],
-                    operation["RowKey"])
-                self._service.insert_entity(
-                    self._operation_tables[mapping[new_operation["status"]]],
-                    new_operation)
+                try:
+                    self._service.delete_entity(
+                        self._operation_tables[mapping[operation["status"]]],
+                        operation["PartitionKey"],
+                        operation["RowKey"])
+                except AzureMissingResourceHttpError:
+                    pass
+                try:
+                    self._service.insert_entity(
+                        self._operation_tables[mapping[new_operation["status"]]],
+                        new_operation)
+                except AzureConflictHttpError:
+                    # already exists, try update
+                    self._service.update_entity(
+                        self._operation_tables[mapping[new_operation["status"]]],
+                        new_operation)
             else:
                 self._service.update_entity(
                     self._operation_tables[mapping[new_operation["status"]]],
                     new_operation)
         except AzureMissingResourceHttpError:
             raise OperationNotFoundException()
-        except AzureConflictHttpError:
-            raise DuplicateOperationException()
 
     def _insert(self, operation):
         try:
@@ -330,17 +338,30 @@ class AzureOperationsStorage(BasicOperationStorage):
         # do basics
         operation = super(AzureOperationsStorage, self).insert_operation(operation)
 
-        self._insert(operation)
+        error = None
+        try:
+            self._insert(operation)
+        except DuplicateOperationException as e:
+            error = e
 
-        if operation["status"] == "completed":
-            self._ensure_balances(operation)
+        try:
+            # always check if balances are ok
+            if operation["status"] == "completed":
+                self._ensure_balances(operation)
+        except BalanceConcurrentException as e:
+            if error is None:
+                error = e
+
+        if error is not None:
+            raise error
 
     @retry_auto_reconnect
-    def _delete_balance(self, address):
+    def _delete_balance(self, address, if_match='*'):
         self._service.delete_entity(
             self._azure_config["balances_table"],
             self._short_digit_hash(address),
-            address
+            address,
+            if_match=if_match
         )
 
     @retry_auto_reconnect
@@ -365,9 +386,23 @@ class AzureOperationsStorage(BasicOperationStorage):
             insert = False
         except AzureMissingResourceHttpError as e:
             balance_dict = {"address": affected_address}
+            balance_dict["PartitionKey"] = self._short_digit_hash(balance_dict["address"])
+            balance_dict["RowKey"] = balance_dict["address"]
             insert = True
 
+        if operation["block_num"] < balance_dict.get("blocknum", 0):
+            raise BalanceConcurrentException()
+        elif operation["block_num"] == balance_dict.get("blocknum", 0) and\
+                operation["txnum"] < balance_dict.get("txnum", 0):
+            raise BalanceConcurrentException()
+        elif operation["block_num"] == balance_dict.get("blocknum", 0) and\
+                operation["txnum"] == balance_dict.get("txnum", 0) and\
+                operation["opnum"] <= balance_dict.get("opnum", 0):
+            raise BalanceConcurrentException()
+
         balance_dict["blocknum"] = max(balance_dict.get("blocknum", 0), operation["block_num"])
+        balance_dict["txnum"] = max(balance_dict.get("txnum", 0), operation["tx_in_block"])
+        balance_dict["opnum"] = max(balance_dict.get("opnum", 0), operation["op_in_tx"])
         total = 0
 
         addrs = split_unique_address(affected_address)
@@ -401,13 +436,11 @@ class AzureOperationsStorage(BasicOperationStorage):
             if key.startswith("balance"):
                 total = total + value
 
-        balance_dict["PartitionKey"] = self._short_digit_hash(balance_dict["address"])
-        balance_dict["RowKey"] = balance_dict["address"]
-
         if total == 0:
             if not insert:
                 try:
-                    self._delete_balance(affected_address)
+                    self._delete_balance(affected_address,
+                                         if_match=balance_dict.etag)
                 except AzureMissingResourceHttpError:
                     pass
             return
@@ -425,7 +458,8 @@ class AzureOperationsStorage(BasicOperationStorage):
             try:
                 self._service.update_entity(
                     self._azure_config["balances_table"],
-                    balance_dict
+                    balance_dict,
+                    if_match=balance_dict.etag
                 )
             except AzureConflictHttpError:
                 raise OperationStorageException("Critical error in database consistency")
@@ -451,10 +485,23 @@ class AzureOperationsStorage(BasicOperationStorage):
         if existing_operation is None:
             try:
                 logging.getLogger(__name__).debug("insert_or_update_operation: attempting insert")
-                self._insert(operation)
 
-                if operation["status"] == "completed":
-                    self._ensure_balances(operation)
+                error = None
+                try:
+                    self._insert(operation)
+                except DuplicateOperationException as e:
+                    error = e
+
+                try:
+                    # always check if balances are ok
+                    if operation["status"] == "completed":
+                        self._ensure_balances(operation)
+                except BalanceConcurrentException as e:
+                    if error is None:
+                        error = e
+
+                if error is not None:
+                    raise error
             except DuplicateOperationException as ex:
                 logging.getLogger(__name__).debug("insert_or_update_operation: fallback to update")
                 # could be an update to completed ...

@@ -423,6 +423,7 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
             op = map_operation(tx, op_in_tx, operation)
             op["block_num"] = block_num + (op_in_tx + 1) * 0.1
+            op["tx_in_block"] = 0
             op["fee_value"] = 0
             storage.flag_operation_completed(op)
         return {"hash": "virtual_transfer", "block": op["block_num"]}

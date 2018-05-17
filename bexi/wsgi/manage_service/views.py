@@ -424,9 +424,12 @@ def get_address_history_from(address):
     :type address: string
 
     """
-    return jsonify(
-        implementations.get_address_history_from(address, _get_take(), _get("afterHash"))
-    )
+    try:
+        return jsonify(
+            implementations.get_address_history_from(address, _get_take(), _get("afterHash"))
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(204)
 
 
 @blueprint_manage_service.route("/api/transactions/history/to/<address>", methods=["GET"])
@@ -438,6 +441,9 @@ def get_address_history_to(address):
     :type address: string
 
     """
-    return jsonify(
-        implementations.get_address_history_to(address, _get_take(), _get("afterHash"))
-    )
+    try:
+        return jsonify(
+            implementations.get_address_history_to(address, _get_take(), _get("afterHash"))
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(204)

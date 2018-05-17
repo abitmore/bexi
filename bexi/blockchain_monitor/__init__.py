@@ -200,11 +200,12 @@ class BlockchainMonitor(object):
             This method takes all transactions (appends block-specific
             informations) and sends them to transaction processing
         """
-        for transaction in block.get("transactions", []):
+        for tx_in_block, transaction in enumerate(block.get("transactions", [])):
             # Add additional information
             transaction.update({
                 "block_num": block.get("block_num"),
                 "timestamp": block.get("timestamp"),
+                "tx_in_block": tx_in_block
             })
             self.process_transaction(transaction)
 
@@ -240,6 +241,7 @@ class BlockchainMonitor(object):
                     "block_num": transaction.get("block_num"),
                     "timestamp": transaction.get("timestamp"),
                     "expiration": transaction.get("expiration"),
+                    "tx_in_block": transaction.get("tx_in_block"),
                     "op_in_tx": op_in_tx,
                     "op": [
                         # Decode the operation type id as string

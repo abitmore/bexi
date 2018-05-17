@@ -72,7 +72,9 @@ def decode_operation(operation):
     memo = operation["op"][1].get("memo", "unknown")
 
     new_operation = {
-        "block_num": operation.get("block_num"),
+        "block_num": operation.get("block_num", None),
+        "tx_in_block": operation.get("tx_in_block", None),
+        "op_in_tx": operation.get("op_in_tx", None),
         "memo": json.dumps(memo),
         "from": operation["op"][1]["from"],
         "to": operation["op"][1]["to"],

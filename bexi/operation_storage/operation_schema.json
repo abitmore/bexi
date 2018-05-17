@@ -13,7 +13,8 @@
 		"memo",
 		"expiration",
 		"customer_id",
-		"chain_identifier"
+		"chain_identifier",
+		"op_in_tx"
 	],
 	"properties": {
 		"status": {
@@ -25,6 +26,17 @@
 			]
 		},
 		"block_num": {
+			"type": [
+				"null",
+				"number"
+			]
+		},
+		"op_in_tx": {
+			"type": [
+				"number"
+			]
+		},
+		"tx_in_block": {
 			"type": [
 				"null",
 				"number"

@@ -45,3 +45,7 @@ class OperationNotFoundException(OperationStorageException):
 
 class DuplicateOperationException(OperationNotFoundException):
     pass
+
+
+class BalanceConcurrentException(OperationNotFoundException):
+    pass
