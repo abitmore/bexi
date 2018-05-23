@@ -2,6 +2,10 @@ dump_folder: dump
 
 logs:
     level: DEBUG
+    http:
+        host: logging-adapter-dev.lykkex.net
+        url: /api/logs
+        secure: True
 
 wsgi:
     name: bexi

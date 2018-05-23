@@ -1,7 +1,7 @@
 import os
 import yaml
 import logging
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, HTTPHandler
 from copy import deepcopy
 import io
 import urllib.request
@@ -184,6 +184,27 @@ class Config(dict):
         return d
 
 
+class LykkeHttpHandler(HTTPHandler):
+
+    def mapLogRecord(self, record):
+        from .wsgi import flask_setup
+
+        record_dict = record.__dict__
+        record_dict["appName"] = Config.get("wsgi", "name")
+        record_dict["appVersion"] = __VERSION__
+        record_dict["envInfo"] = flask_setup.get_env_info()
+        record_dict["logLevel"] = record_dict["levelname"]
+        record_dict["component"] = record_dict["name"]
+        record_dict["process"] = record_dict["processName"]
+        record_dict["context"] = None
+
+        if record_dict.get("exc_info", None) is not None:
+            record_dict["callStack"] = record_dict["exc_text"]
+            record_dict["exceptionType"] = record_dict["exc_info"][0].__name__
+
+        return record_dict
+
+
 def set_global_logger(existing_loggers=None):
     # setup logging
     # ... log to file system
@@ -206,12 +227,23 @@ def set_global_logger(existing_loggers=None):
     sh.setFormatter(logging.Formatter(log_format))
     sh.setLevel(log_level)
 
+    use_handlers = [trfh, sh]
+
+    if not Config.get("logs", "http", {}) == {}:
+        # ... and http logger
+        lhh = LykkeHttpHandler(
+            host=Config.get("logs", "http", "host"),
+            url=Config.get("logs", "http", "url"),
+            method="POST",
+            secure=Config.get("logs", "http", "secure")
+        )
+        lhh.setLevel(log_level)
+        use_handlers.append(lhh)
+
     # global config (e.g. for werkzeug)
     logging.basicConfig(level=log_level,
                         format=log_format,
-                        handlers=[trfh, sh])
-
-    use_handlers = [trfh, sh]
+                        handlers=use_handlers)
 
     if existing_loggers is not None:
         if not type(existing_loggers) == list:
