@@ -55,7 +55,7 @@
 			"type": "string"
 		},
 		"amount_value": {
-			"type": "number"
+			"type": ["number", "string"]
 		},
 		"amount_asset_id": {
 			"type": "string"

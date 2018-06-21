@@ -14,6 +14,7 @@ from .exceptions import (
     DuplicateOperationException,
     InvalidOperationException,
     OperationStorageException)
+from bitshares.amount import Amount
 
 
 class MongoDBOperationsStorage(BasicOperationStorage):
@@ -263,26 +264,35 @@ class MongoDBOperationsStorage(BasicOperationStorage):
                         "customer_id": addrs["customer_id"]
                     }):
                 this_block_num = operation["block_num"]
+
                 asset_id = operation["amount_asset_id"]
+                balance = Amount({
+                    "asset_id": asset_id,
+                    "amount": address_balances[address].get(asset_id, "0")})
+                amount_value = Amount({
+                    "asset_id": asset_id,
+                    "amount": operation["amount_value"]})
+
                 if addrs["account_id"] == operation["from"]:
                     # negative
-                    balance = address_balances[address].get(asset_id, 0)
-
                     address_balances[address][asset_id] =\
-                        balance - operation["amount_value"]
+                        str(int(balance - amount_value))
 
                     # fee as well
                     asset_id = operation["fee_asset_id"]
-                    balance = address_balances[address].get(asset_id, 0)
+                    balance = Amount({
+                        "asset_id": asset_id,
+                        "amount": address_balances[address].get(asset_id, "0")})
+                    fee_value = Amount({
+                        "asset_id": asset_id,
+                        "amount": operation["fee_value"]})
 
                     address_balances[address][asset_id] =\
-                        balance - operation["fee_value"]
+                        str(int(balance - fee_value))
                 elif addrs["account_id"] == operation["to"]:
                     # positive
-                    balance = address_balances[address].get(asset_id, 0)
-
                     address_balances[address][asset_id] =\
-                        balance + operation["amount_value"]
+                        str(int(balance + amount_value))
                 else:
                     raise InvalidOperationException()
                 max_block_number = max(max_block_number, this_block_num)

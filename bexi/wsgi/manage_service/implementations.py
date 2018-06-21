@@ -148,7 +148,7 @@ def get_balances(take, continuation=None):
     for account in all_accounts:
         block_num = balancesDict[account].pop("block_num")
         for asset_id in balancesDict[account].keys():
-            if balancesDict[account][asset_id] > 0:
+            if int(balancesDict[account][asset_id]) > 0:
                 all_balances.append(
                     {
                         "address": account,
