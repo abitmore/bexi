@@ -210,12 +210,12 @@ def set_global_logger(existing_loggers=None):
     
     # setup logging
     log_level = logging.getLevelName(Config.get("logs", "level", default="INFO"))
+    log_format = ('%(asctime)s %(levelname) -10s: %(message)s')
 
     if Config.get("logs", "file", true):
         # ... log to file system
         log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
         os.makedirs(log_folder, exist_ok=True)
-        log_format = ('%(asctime)s %(levelname) -10s: %(message)s')
         trfh = TimedRotatingFileHandler(
             os.path.join(log_folder, "bexi.log"),
             "midnight",
