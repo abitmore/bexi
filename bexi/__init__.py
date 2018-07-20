@@ -206,28 +206,33 @@ class LykkeHttpHandler(HTTPHandler):
 
 
 def set_global_logger(existing_loggers=None):
+    use_handlers = []
+    
     # setup logging
-    # ... log to file system
-    log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
     log_level = logging.getLevelName(Config.get("logs", "level", default="INFO"))
 
-    os.makedirs(log_folder, exist_ok=True)
-    log_format = ('%(asctime)s %(levelname) -10s: %(message)s')
-    trfh = TimedRotatingFileHandler(
-        os.path.join(log_folder, "bexi.log"),
-        "midnight",
-        1
-    )
-    trfh.suffix = "%Y-%m-%d"
-    trfh.setFormatter(logging.Formatter(log_format))
-    trfh.setLevel(log_level)
+    if Config.get("logs", "file", true):
+        # ... log to file system
+        log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
+        os.makedirs(log_folder, exist_ok=True)
+        log_format = ('%(asctime)s %(levelname) -10s: %(message)s')
+        trfh = TimedRotatingFileHandler(
+            os.path.join(log_folder, "bexi.log"),
+            "midnight",
+            1
+        )
+        trfh.suffix = "%Y-%m-%d"
+        trfh.setFormatter(logging.Formatter(log_format))
+        trfh.setLevel(log_level)
+    
+        use_handlers.append(trfh)
 
     # ... and to console
     sh = logging.StreamHandler()
     sh.setFormatter(logging.Formatter(log_format))
     sh.setLevel(log_level)
 
-    use_handlers = [trfh, sh]
+    use_handlers.append(sh)
 
     if not Config.get("logs", "http", {}) == {}:
         # ... and http logger
