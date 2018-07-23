@@ -7,6 +7,7 @@ import io
 import urllib.request
 import collections
 import json
+import threading
 
 
 def get_version():
@@ -203,6 +204,14 @@ class LykkeHttpHandler(HTTPHandler):
             record_dict["exceptionType"] = record_dict["exc_info"][0].__name__
 
         return record_dict
+
+    def emit(self, record):
+        def super_emit():
+            super(LykkeHttpHandler, self).emit(record)
+
+        thread = threading.Thread(target=super_emit)
+        thread.daemon = True
+        thread.start()
 
 
 def set_global_logger(existing_loggers=None):
