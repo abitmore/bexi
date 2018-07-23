@@ -79,7 +79,7 @@ class BlockchainMonitor(object):
         # make sure the memo key is added to the instance
         memo_key = Config.get("bitshares", "exchange_account_memo_key")
         if not self.bitshares.wallet.created() or\
-                memo_key in self.bitshares.wallet.keys:
+                memo_key not in self.bitshares.wallet.keys:
             self.bitshares.wallet.setKeys(memo_key)
 
         # Get configuration

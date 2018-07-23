@@ -234,9 +234,9 @@ def split_memo(memo):
         raise ValueError()
 
     splitted = memo.split(DELIMITER)
-    always = {"customer_id": splitted[0]}
+    always = {"customer_id": splitted[0].strip()}
     if len(splitted) == 2:
-        always["incident_id"] = splitted[1]
+        always["incident_id"] = splitted[1].strip()
     else:
         always["incident_id"] = None
     return always
