@@ -6,6 +6,7 @@ logs:
         host: logging-adapter-dev.lykkex.net
         url: /api/logs
         secure: True
+        blocking: False
 
 wsgi:
     name: bexi
