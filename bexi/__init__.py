@@ -206,7 +206,7 @@ class LykkeHttpHandler(HTTPHandler):
         return record_dict
 
     def update_blocking(self):
-        self.blocking = Config.get("logs", "http", "blocking", False)
+        self.blocking = Config.get("logs", "http", "blocking", True)
 
     def emit(self, record):
         if self.blocking:
