@@ -117,7 +117,7 @@ def is_valid_address(address, bitshares_instance=None):
         else:
             Account(split["account_id"], bitshares_instance=bitshares_instance)
             return True
-    except Exception:
+    except AccountDoesNotExistsException:
         return False
 
 
