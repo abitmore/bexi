@@ -11,6 +11,10 @@ class OperationStorageLostException(OperationStorageException):
     pass
 
 
+class OperationStorageBadRequestException(OperationStorageException):
+    pass
+
+
 class AddressAlreadyTrackedException(OperationStorageException):
     pass
 

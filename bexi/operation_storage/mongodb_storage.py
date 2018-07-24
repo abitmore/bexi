@@ -44,7 +44,11 @@ class MongoDBOperationsStorage(BasicOperationStorage):
         self._mongodb_config["address_collection"] = self._mongodb_config.get("address_collection", "address")
 
         if not mongodb_client:
-            mongodb_client = MongoClient(host=mongodb_config["seeds"])
+            mongodb_client = MongoClient(host=mongodb_config["seeds"],
+                                         socketTimeoutMS=1000,
+                                         connectTimeoutMS=1000,
+                                         serverSelectionTimeoutMS=1000)
+
         self._db = mongodb_client[mongodb_config["db"]]
 
         if purge:
