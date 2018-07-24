@@ -32,6 +32,8 @@ def reset():
 def _get_configured_instance():
     network = Config.get("network_type")
     connection = Config.get("bitshares", "connection", network)
+    if connection.get("num_retries", None) is None:
+        connection["num_retries"] = -1
     logging.getLogger(__name__).debug("BitShares connection is initialized with with given config ... \n")
     return bitshares.BitShares(**connection)
 
