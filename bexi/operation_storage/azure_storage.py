@@ -41,7 +41,7 @@ class AzureOperationsStorage(BasicOperationStorage):
     """
 
     def get_retry_exceptions(self):
-        return (NewConnectionError)
+        return (NewConnectionError, AzureHttpError)
 
     @retry_auto_reconnect
     def __init__(self, azure_config, purge=False):
@@ -589,6 +589,7 @@ class AzureOperationsStorage(BasicOperationStorage):
             if continuation is not None:
                 try:
                     continuation_marker = json.loads(continuation)
+                    continuation_marker = str(continuation_marker)
                 except TypeError:
                     raise InputInvalidException()
                 except JSONDecodeError:
@@ -624,6 +625,7 @@ class AzureOperationsStorage(BasicOperationStorage):
             if continuation is not None:
                 try:
                     continuation_marker = json.loads(continuation)
+                    continuation_marker = str(continuation_marker)
                 except TypeError:
                     raise InputInvalidException()
                 except JSONDecodeError:

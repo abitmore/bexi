@@ -1,4 +1,4 @@
-from ..operation_storage.exceptions import DuplicateOperationException
+from ..operation_storage.exceptions import DuplicateOperationException, OperationStorageBadRequestException
 from ..factory import get_operation_storage
 from ..connection import requires_blockchain
 from .. import Config
@@ -345,3 +345,6 @@ class BlockchainMonitor(object):
             self.storage.insert_or_update_operation(operation)
         except DuplicateOperationException:
             logging.getLogger(__name__).debug("Storage already contained operation, skipping ...")
+        except OperationStorageBadRequestException as e:
+            logging.getLogger(__name__).debug("Storage gave bad request, exception below. Skipping ...")
+            logging.getLogger(__name__).exception(e)
