@@ -14,6 +14,7 @@ from .exceptions import (
     DuplicateOperationException,
     InvalidOperationException,
     OperationStorageException)
+from bitshares.amount import Amount
 
 
 class MongoDBOperationsStorage(BasicOperationStorage):
@@ -30,16 +31,30 @@ class MongoDBOperationsStorage(BasicOperationStorage):
                 pymongo.errors.ServerSelectionTimeoutError,)
 
     @retry_auto_reconnect
-    def __init__(self, mongodb_config, mongodb_client=None):
+    def __init__(self, mongodb_config, mongodb_client=None, purge=False):
         super(MongoDBOperationsStorage, self).__init__()
 
         if not mongodb_config:
             raise Exception("No mongo db configuration provided!")
         self._mongodb_config = mongodb_config
 
+        # ensure defaults
+        self._mongodb_config["operation_collection"] = self._mongodb_config.get("operation_collection", "operations")
+        self._mongodb_config["status_collection"] = self._mongodb_config.get("status_collection", "status")
+        self._mongodb_config["address_collection"] = self._mongodb_config.get("address_collection", "address")
+
         if not mongodb_client:
-            mongodb_client = MongoClient(host=mongodb_config["seeds"])
+            mongodb_client = MongoClient(host=mongodb_config["seeds"],
+                                         socketTimeoutMS=1000,
+                                         connectTimeoutMS=1000,
+                                         serverSelectionTimeoutMS=1000)
+
         self._db = mongodb_client[mongodb_config["db"]]
+
+        if purge:
+            mongodb_client[self._mongodb_config["db"]][self._mongodb_config["status_collection"]].drop()
+            mongodb_client[self._mongodb_config["db"]][self._mongodb_config["operation_collection"]].drop()
+            mongodb_client[self._mongodb_config["db"]][self._mongodb_config["address_collection"]].drop()
 
         # if collections doesnt exist, create it
         if mongodb_config["operation_collection"] not in\
@@ -222,6 +237,7 @@ class MongoDBOperationsStorage(BasicOperationStorage):
 
     @retry_auto_reconnect
     def get_balances(self, take, continuation=None, addresses=None):
+        # deprecated, redo logic according to azure storage for performance
         address_balances = collections.defaultdict(lambda: collections.defaultdict())
 
         if continuation is None:
@@ -252,26 +268,35 @@ class MongoDBOperationsStorage(BasicOperationStorage):
                         "customer_id": addrs["customer_id"]
                     }):
                 this_block_num = operation["block_num"]
+
                 asset_id = operation["amount_asset_id"]
+                balance = Amount({
+                    "asset_id": asset_id,
+                    "amount": address_balances[address].get(asset_id, "0")})
+                amount_value = Amount({
+                    "asset_id": asset_id,
+                    "amount": operation["amount_value"]})
+
                 if addrs["account_id"] == operation["from"]:
                     # negative
-                    balance = address_balances[address].get(asset_id, 0)
-
                     address_balances[address][asset_id] =\
-                        balance - operation["amount_value"]
+                        str(int(balance - amount_value))
 
                     # fee as well
                     asset_id = operation["fee_asset_id"]
-                    balance = address_balances[address].get(asset_id, 0)
+                    balance = Amount({
+                        "asset_id": asset_id,
+                        "amount": address_balances[address].get(asset_id, "0")})
+                    fee_value = Amount({
+                        "asset_id": asset_id,
+                        "amount": operation["fee_value"]})
 
                     address_balances[address][asset_id] =\
-                        balance - operation["fee_value"]
+                        str(int(balance - fee_value))
                 elif addrs["account_id"] == operation["to"]:
                     # positive
-                    balance = address_balances[address].get(asset_id, 0)
-
                     address_balances[address][asset_id] =\
-                        balance + operation["amount_value"]
+                        str(int(balance + amount_value))
                 else:
                     raise InvalidOperationException()
                 max_block_number = max(max_block_number, this_block_num)
@@ -290,6 +315,12 @@ class MongoDBOperationsStorage(BasicOperationStorage):
                 return {"customer_id": filter_by.pop("customer_id")}
             if filter_by.get("address"):
                 addrs = split_unique_address(filter_by.pop("address"))
+                return {"customer_id": addrs["customer_id"]}
+            if filter_by.get("from"):
+                addrs = split_unique_address(filter_by.pop("from"))
+                return {"customer_id": addrs["customer_id"]}
+            if filter_by.get("to"):
+                addrs = split_unique_address(filter_by.pop("to"))
                 return {"customer_id": addrs["customer_id"]}
             if filter_by:
                 raise Exception("Filter not supported")

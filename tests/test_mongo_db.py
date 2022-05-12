@@ -19,7 +19,9 @@ class TestMongoDB(unittest.TestCase):
 
     def _get_db_config(self):
         config = Config.get_config()["operation_storage"]
-        return config["mongodbtest"]
+        mongodb_config = config["mongodbtest"]
+        mongodb_config["operation_collection"] = mongodb_config.get("operation_collection", "operations")
+        return mongodb_config
 
     def test_not_reachable(self):
         mongodb_config = self._get_db_config()
@@ -118,12 +120,12 @@ class TestMongoDB(unittest.TestCase):
                         "custom_index": {
                             "type": "number",
                             "description": "must be an int and is required"
-                            },
+                        },
                         "content": {
                             "type": "string",
                             "description": "must be a string and is required"
-                            }
-                     }
+                        }
+                    }
                 }
             })
 
@@ -138,8 +140,12 @@ class TestMongoDB(unittest.TestCase):
 
         invalid_empty = {"content": "nothing"}
 
+        invalid_overflow = {"custom_index": 9999900000,
+                            "content": "nothing"}
+
         collection.insert_one(valid)
         collection.insert_one(also_valid)
+        collection.insert_one(invalid_overflow)
 
         self.assertRaises(pymongo.errors.WriteError,
                           collection.insert_one,

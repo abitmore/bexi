@@ -2,6 +2,7 @@ network_type: Test
 
 bitshares:
     transaction_expiration_in_sec: 43200
+    blockchain_allowed_sync_delay_in_sec: 180
     # irreversible, or head
     watch_mode: irreversible
         

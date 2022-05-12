@@ -25,8 +25,7 @@ from .implementations import (
     MemoMatchingFailedException,
     BadArgumentException
 )
-from bexi import addresses
-from bexi.addresses import split_unique_address
+from ... import addresses
 
 
 blueprint_manage_service = Blueprint("Blockchain.Api", __name__)
@@ -50,8 +49,8 @@ def _get_take():
         custom_abort(400)
 
 
-def _get_continuation():
-    # continuation is optional
+def _get_continuation_int():
+    # continuation is optional, int
     continuation = request.args.get("continuation", None)
     if continuation:
         if type(continuation) != int and type(continuation) != str:
@@ -62,6 +61,17 @@ def _get_continuation():
             custom_abort(400)
     else:
         return 0
+
+
+def _get_continuation_str():
+    # continuation is optional
+    continuation = request.args.get("continuation", None)
+    if continuation:
+        if type(continuation) != str:
+            custom_abort(400)
+        return continuation
+    else:
+        return None
 
 
 def _body(parameter_name, default_value=None):
@@ -98,9 +108,12 @@ def get_contants():
     [GET] /api/constants
     """
     return jsonify(
-        {"publicAddressExtension": {"separator": addresses.DELIMITER,
-                                    "displayName": "Memo",
-                                    "baseDisplayName": "Send to account"}
+        {
+            "publicAddressExtension": {
+                "separator": addresses.DELIMITER,
+                "displayName": "Memo",
+                "baseDisplayName": "Send to account"
+            }
         }
     )
 
@@ -125,7 +138,7 @@ def get_all_assets():
     """
     try:
         return jsonify(
-            implementations.get_all_assets(_get_take(), _get_continuation())
+            implementations.get_all_assets(_get_take(), _get_continuation_int())
         )
     except ValueError:
         custom_abort(400)
@@ -215,7 +228,7 @@ def get_balances():
     """
     try:
         return jsonify(
-            implementations.get_balances(_get_take(), _get_continuation())
+            implementations.get_balances(_get_take(), _get_continuation_str())
         )
     except BadArgumentException:
         custom_abort(400)
@@ -411,9 +424,12 @@ def get_address_history_from(address):
     :type address: string
 
     """
-    return jsonify(
-        implementations.get_address_history_from(address, _get_take(), _get("afterHash"))
-    )
+    try:
+        return jsonify(
+            implementations.get_address_history_from(address, _get_take(), _get("afterHash"))
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(204)
 
 
 @blueprint_manage_service.route("/api/transactions/history/to/<address>", methods=["GET"])
@@ -425,6 +441,9 @@ def get_address_history_to(address):
     :type address: string
 
     """
-    return jsonify(
-        implementations.get_address_history_to(address, _get_take(), _get("afterHash"))
-    )
+    try:
+        return jsonify(
+            implementations.get_address_history_to(address, _get_take(), _get("afterHash"))
+        )
+    except AccountDoesNotExistsException:
+        custom_abort(204)

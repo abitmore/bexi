@@ -9,6 +9,7 @@ from bexi.connection import requires_blockchain
 from bexi.blockchain_monitor import BlockchainMonitor
 from bitshares.bitshares import BitShares
 from bexi import __VERSION__
+from bexi.utils import get_exchange_account_name
 
 
 class TestIntegration(AFlaskTest):
@@ -45,6 +46,8 @@ class TestIntegration(AFlaskTest):
 
     @requires_blockchain
     def test_track_balance(self, bitshares_instance=None):
+        store = factory.get_operation_storage(purge=True)
+
         addressDW = self.client.post(url_for('Blockchain.SignService.wallets')).json["publicAddress"]
 
         addressEW = create_unique_address(self.get_customer_id(), "")
@@ -85,7 +88,7 @@ class TestIntegration(AFlaskTest):
 
             print(broadcast_transaction)
 
-            return broadcast.json["block_num"]
+            return broadcast.json["block"]
 
         def flag_completed(block_num):
             network = Config.get("network_type")
@@ -93,7 +96,6 @@ class TestIntegration(AFlaskTest):
 #             connection["keys"] = key
             instance = BitShares(**connection)
 
-            store = factory.get_operation_storage(purge=False)
             irr = instance.rpc.get_dynamic_global_properties().get("last_irreversible_block_num")
             head = instance.rpc.get_dynamic_global_properties().get("head_block_number")
 
@@ -123,7 +125,7 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
         assert response.status_code == 200
         self.assertEqual(response.json["items"],
-                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': 110000, 'block': block_num * 10}])
+                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': "110000", 'block': block_num * 10}])
 
         block_num = build_sign_and_broadcast(
             {
@@ -140,17 +142,21 @@ class TestIntegration(AFlaskTest):
 
         response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
         assert response.status_code == 200
-        self.assertEqual(response.json["items"][0]["balance"], 10000)
+        self.assertEqual(response.json["items"][0]["balance"], "10000")
         assert block_num > 0
+
+        balance_block_num = block_num
 
         response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df61"))
         self.assertEqual(response.json["block"], block_num * 10)
+
+        WW = create_unique_address(self.get_customer_id(), "some_user_memo")
 
         block_num = build_sign_and_broadcast(
             {
                 "operationId": "cbeea30e-2218-4405-9089-86d003e4df62",
                 "fromAddress": addressHW,
-                "toAddress": create_unique_address(self.get_customer_id(), ""),
+                "toAddress": WW,
                 "assetId": "1.3.0",
                 "amount": 100000,
                 "includeFee": True
@@ -163,7 +169,7 @@ class TestIntegration(AFlaskTest):
         response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
         assert response.status_code == 200
         self.assertEqual(response.json["items"],
-                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': 10000, 'block': block_num * 10}])
+                         [{'address': addressDW, 'assetId': '1.3.0', 'balance': "10000", 'block': balance_block_num * 10}])
 
         self.maxDiff = None
 
@@ -175,13 +181,39 @@ class TestIntegration(AFlaskTest):
         fromDW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressDW) + "?take=3")
         assert fromDW.status_code == 200
         self.assertEqual(fromDW.json,
-                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': 'lykke-test:'}])
+                         [{'amount': '100000', 'assetId': '1.3.0', 'fromAddress': addressDW, 'hash': fromDW.json[0]['hash'], 'timestamp': fromDW.json[0]['timestamp'], 'toAddress': 'lykke-test'}])
 
         toHW = self.client.get(url_for('Blockchain.Api.get_address_history_to', address=addressHW) + "?take=3")
         assert toHW.status_code == 200
         assert toHW.json == []
 
-        fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=addressHW) + "?take=3")
+        fromHW = self.client.get(url_for('Blockchain.Api.get_address_history_from', address=split_unique_address(addressHW)["account_id"]) + "?take=3")
         assert fromHW.status_code == 200
         self.assertEqual(fromHW.json,
-                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': addressHW, 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': 'lykke-customer:'}])
+                         [{'amount': '99900', 'assetId': '1.3.0', 'fromAddress': get_exchange_account_name(), 'hash': fromHW.json[0]['hash'], 'timestamp': fromHW.json[0]['timestamp'], 'toAddress': WW}])
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df60"))
+        assert response.status_code == 200
+        self.assertEqual(response.json['operationId'],
+                         'cbeea30e-2218-4405-9089-86d003e4df60')
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df61"))
+        assert response.status_code == 200
+        self.assertEqual(response.json['operationId'],
+                         'cbeea30e-2218-4405-9089-86d003e4df61')
+
+        response = self.client.get(url_for('Blockchain.Api.get_broadcasted_transaction', operationId="cbeea30e-2218-4405-9089-86d003e4df62"))
+        assert response.status_code == 200
+        self.assertEqual(response.json['operationId'],
+                         'cbeea30e-2218-4405-9089-86d003e4df62')
+
+        response = self.client.delete(url_for('Blockchain.Api.unobserve_address', address=addressDW))
+        assert response.status_code == 200
+
+        response = self.client.delete(url_for('Blockchain.Api.unobserve_address', address=addressHW))
+        assert response.status_code == 200
+
+        response = self.client.get(url_for('Blockchain.Api.get_balances') + "?take=2")
+        assert response.status_code == 200
+        self.assertEqual(response.json["items"],
+                         [])

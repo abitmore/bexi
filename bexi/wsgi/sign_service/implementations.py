@@ -25,6 +25,10 @@ def sign(tx, keys):
         signedTransaction["decoded_memo"] = tx["decoded_memo"]
     except KeyError:
         pass
+    try:
+        signedTransaction["incident_id"] = tx["incident_id"]
+    except KeyError:
+        pass
 
     return dict(
         signedTransaction=json.dumps(signedTransaction)
@@ -42,7 +46,7 @@ def create_address():
         }
     else:
         return {
-            "privateKey": Config.get("bitshares", "exchange_account_active_key"),
+            "privateKey": Config.get("bitshares", "exchange_account_active_key", default="keep_keys_private"),
             "publicAddress": create_unique_address(Config.get("bitshares", "exchange_account_name")),
             "addressContext": Config.get("bitshares", "exchange_account_memo_key"),
         }

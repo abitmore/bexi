@@ -15,15 +15,17 @@ from bitshares.exceptions import AccountDoesNotExistsException,\
 
 from ...addresses import (
     split_unique_address,
-    get_from_address_from_operation,
+    get_from_address,
     create_memo,
-    get_to_address_from_operation)
+    get_to_address,
+    create_unique_address,
+    is_withdraw)
 
 from ...connection import requires_blockchain
 from ... import Config, factory
 from ... import utils
 from ...operation_storage import operation_formatter
-from ...operation_storage.exceptions import InputInvalidException
+from ...operation_storage.exceptions import InputInvalidException, InvalidOperationIdException
 
 from bitsharesapi.exceptions import UnhandledRPCError
 from bitshares.wallet import Wallet
@@ -115,7 +117,7 @@ def is_valid_address(address, bitshares_instance=None):
         else:
             Account(split["account_id"], bitshares_instance=bitshares_instance)
             return True
-    except Exception:
+    except AccountDoesNotExistsException:
         return False
 
 
@@ -139,14 +141,14 @@ def get_balances(take, continuation=None):
     except InputInvalidException:
         raise BadArgumentException()
 
-    continuation = balancesDict.pop("continuation", None)
+    continuation = balancesDict.pop("continuation")
 
     all_accounts = sorted(balancesDict.keys())
     all_balances = []
     for account in all_accounts:
         block_num = balancesDict[account].pop("block_num")
         for asset_id in balancesDict[account].keys():
-            if balancesDict[account][asset_id] > 0:
+            if int(balancesDict[account][asset_id]) > 0:
                 all_balances.append(
                     {
                         "address": account,
@@ -174,21 +176,29 @@ def _get_from_history(address, take, to_or_from, after_hash=None):
 
     all_operations = []
 
+    # normalize address (given address can contain id or name)
     address_split = split_unique_address(address)
+    address = create_unique_address(address_split["account_id"], address_split["customer_id"])
+
     afterTimestamp = datetime.fromtimestamp(0)
+
+    filter_dict = {to_or_from: address_split["account_id"]}
+    if address_split["customer_id"]:
+        filter_dict.update({"customer_id": address_split["customer_id"]})
+
     for operation in _get_os().get_operations_completed(
-            filter_by={"customer_id": address_split["customer_id"]}):
+            filter_by=filter_dict):
         # deposit, thus from
         add_op = {
             "timestamp": operation.get("timestamp", None),
-            "fromAddress": get_from_address_from_operation(operation),
-            "toAddress": get_to_address_from_operation(operation),
+            "fromAddress": get_from_address(operation),
+            "toAddress": get_to_address(operation),
             "assetId": operation["amount_asset_id"],
             "amount": str(operation["amount_value"]),
             "hash": operation["chain_identifier"]
         }
-        if (to_or_from == "to" and address == add_op["toAddress"]) or\
-                (to_or_from == "from" and address == add_op["fromAddress"]):
+        if (to_or_from == "to" and add_op["toAddress"] == address) or\
+                (to_or_from == "from" and add_op["fromAddress"] == address):
             all_operations.append(add_op)
             if operation["chain_identifier"] == after_hash and add_op["timestamp"]:
                 afterTimestamp = utils.string_to_date(add_op["timestamp"])
@@ -212,7 +222,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
                       amount, includeFee, bitshares_instance=None):
     """ Builds a transaction (without signature)
 
-        :param guid operationId: Lykke unique operation ID
+        :param guid incidentId: Lykke unique operation ID
         :param str fromAddress: Source address
         :param str toAddress: Destination address
         :param str assetId: Asset ID to transfer
@@ -279,17 +289,7 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         to_address["account_id"],
         bitshares_instance=bitshares_instance)
 
-    if utils.is_exchange_account(from_account["id"]) and utils.is_exchange_account(to_account["id"]):
-        # internal shift
-        memo_plain = create_memo(fromAddress, incidentId)
-    elif utils.is_exchange_account(from_account["id"]):
-        # Withdrawal
-        memo_plain = create_memo(fromAddress, incidentId)
-    elif utils.is_exchange_account(to_account["id"]):
-        # Deposit
-        memo_plain = create_memo(toAddress, incidentId)
-    else:
-        raise Exception("No exchange account involved")
+    memo_plain = create_memo(from_address, to_address, incidentId)
 
     try:
         # Construct amount
@@ -337,7 +337,10 @@ def build_transaction(incidentId, fromAddress, fromMemoWif, toAddress, asset_id,
         tx = obtain_raw_tx()
 
     # Add additional/optional information
+    #   - add incident_id as fallback for internal database
+    #   - add decoded memo to avoid double decoding
     tx.update({
+        "incident_id": incidentId,
         "decoded_memo": memo_plain,
     })
 
@@ -374,6 +377,8 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
             op_in_tx=op_in_tx,
             transaction_id=tx["transaction_id"]
         )
+        if tx.get("incident_id", None) is not None:
+            j["incident_id"] = tx["incident_id"]
         return operation_formatter.decode_operation(j)
 
     for op_in_tx, operation in enumerate(tx.get("operations", [])):
@@ -390,9 +395,9 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
         try:
             tx = tx.broadcast()
             if tx.get("id", None):
-                return {"chain_identifier": tx["id"] + ":" + str(tx["trx_num"]), "block_num": tx["block_num"]}
+                return {"hash": tx["id"] + ":" + str(tx["trx_num"]), "block": tx["block_num"]}
             else:
-                return {"chain_identifier": "no_id_given", "block_num": -1}
+                return {"hash": "no_id_given", "block": -1}
         except UnhandledRPCError as e:
             if "insufficient_balance" in str(e):
                 raise NotEnoughBalanceException()
@@ -418,15 +423,23 @@ def broadcast_transaction(signed_transaction, bitshares_instance=None):
         for op_in_tx, operation in enumerate(tx.get("operations", [])):
             op = map_operation(tx, op_in_tx, operation)
             op["block_num"] = block_num + (op_in_tx + 1) * 0.1
+            op["tx_in_block"] = 0
             op["fee_value"] = 0
             storage.flag_operation_completed(op)
-        return {"chain_identifier": "virtual_transfer", "block_num": op["block_num"]}
+        return {"hash": "virtual_transfer", "block": op["block_num"]}
     else:
         raise Exception("This should be unreachable")
 
 
 def get_broadcasted_transaction(operationId):
-    operation_formatter.validate_incident_id(operationId)
+    try:
+        operation_formatter.validate_incident_id(operationId)
+    except InvalidOperationIdException as e:
+        # also allow hash
+        try:
+            operation_formatter.validate_chain_identifier(operationId)
+        except InvalidOperationIdException:
+            raise e
 
     operation = _get_os().get_operation(operationId)
 

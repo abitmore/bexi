@@ -11,6 +11,10 @@ class OperationStorageLostException(OperationStorageException):
     pass
 
 
+class OperationStorageBadRequestException(OperationStorageException):
+    pass
+
+
 class AddressAlreadyTrackedException(OperationStorageException):
     pass
 
@@ -44,4 +48,8 @@ class OperationNotFoundException(OperationStorageException):
 
 
 class DuplicateOperationException(OperationNotFoundException):
+    pass
+
+
+class BalanceConcurrentException(OperationNotFoundException):
     pass

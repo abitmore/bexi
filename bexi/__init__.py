@@ -1,15 +1,21 @@
 import os
 import yaml
 import logging
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, HTTPHandler
 from copy import deepcopy
 import io
 import urllib.request
 import collections
 import json
+import threading
 
 
-__VERSION__ = "0.1"
+def get_version():
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", 'VERSION')) as version_file:
+        return version_file.read().strip()
+
+
+__VERSION__ = get_version()
 
 
 class Config(dict):
@@ -179,34 +185,86 @@ class Config(dict):
         return d
 
 
-def set_global_logger(existing_loggers=None):
-    # setup logging
-    # ... log to file system
-    log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
-    log_level = logging.getLevelName(Config.get("logs", "level", default="INFO"))
+class LykkeHttpHandler(HTTPHandler):
 
-    os.makedirs(log_folder, exist_ok=True)
+    def mapLogRecord(self, record):
+        from .wsgi import flask_setup
+
+        record_dict = record.__dict__
+        record_dict["appName"] = Config.get("wsgi", "name")
+        record_dict["appVersion"] = __VERSION__
+        record_dict["envInfo"] = flask_setup.get_env_info()
+        record_dict["logLevel"] = record_dict["levelname"]
+        record_dict["component"] = record_dict["name"]
+        record_dict["process"] = record_dict["processName"]
+        record_dict["context"] = None
+
+        if record_dict.get("exc_info", None) is not None:
+            record_dict["callStack"] = record_dict["exc_text"]
+            record_dict["exceptionType"] = record_dict["exc_info"][0].__name__
+
+        return record_dict
+
+    def update_blocking(self):
+        self.blocking = Config.get("logs", "http", "blocking", True)
+
+    def emit(self, record):
+        if self.blocking:
+            super(LykkeHttpHandler, self).emit(record)
+        else:
+            def super_emit():
+                super(LykkeHttpHandler, self).emit(record)
+
+            thread = threading.Thread(target=super_emit)
+            thread.daemon = True
+            thread.start()
+
+
+def set_global_logger(existing_loggers=None):
+    use_handlers = []
+
+    # setup logging
+    log_level = logging.getLevelName(Config.get("logs", "level", default="INFO"))
     log_format = ('%(asctime)s %(levelname) -10s: %(message)s')
-    trfh = TimedRotatingFileHandler(
-        os.path.join(log_folder, "bexi.log"),
-        "midnight",
-        1
-    )
-    trfh.suffix = "%Y-%m-%d"
-    trfh.setFormatter(logging.Formatter(log_format))
-    trfh.setLevel(log_level)
+
+    if Config.get("logs", "file", True):
+        # ... log to file system
+        log_folder = os.path.join(Config.get("dump_folder", default="dump"), "logs")
+        os.makedirs(log_folder, exist_ok=True)
+        trfh = TimedRotatingFileHandler(
+            os.path.join(log_folder, "bexi.log"),
+            "midnight",
+            1
+        )
+        trfh.suffix = "%Y-%m-%d"
+        trfh.setFormatter(logging.Formatter(log_format))
+        trfh.setLevel(log_level)
+
+        use_handlers.append(trfh)
 
     # ... and to console
     sh = logging.StreamHandler()
     sh.setFormatter(logging.Formatter(log_format))
     sh.setLevel(log_level)
 
+    use_handlers.append(sh)
+
+    if not Config.get("logs", "http", {}) == {}:
+        # ... and http logger
+        lhh = LykkeHttpHandler(
+            host=Config.get("logs", "http", "host"),
+            url=Config.get("logs", "http", "url"),
+            method="POST",
+            secure=Config.get("logs", "http", "secure")
+        )
+        lhh.setLevel(log_level)
+        lhh.update_blocking()
+        use_handlers.append(lhh)
+
     # global config (e.g. for werkzeug)
     logging.basicConfig(level=log_level,
                         format=log_format,
-                        handlers=[trfh, sh])
-
-    use_handlers = [trfh, sh]
+                        handlers=use_handlers)
 
     if existing_loggers is not None:
         if not type(existing_loggers) == list:

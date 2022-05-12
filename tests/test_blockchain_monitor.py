@@ -8,13 +8,14 @@ class TestBlockchainMonitor(ATestnetTest):
 
     def setUp(self):
         # only load the config we want (no active keys!)
-        if Config.data and Config.data["network_type"] != "Test":
+        if Config.data and Config.data.get("network_type", None) != "Test":
             connection.reset()
 
         Config.load(["config_bitshares_connection.yaml",
                      "config_bitshares_memo_keys.yaml",
                      "config_bitshares.yaml",
-                     "config_operation_storage.yaml"])
+                     "config_operation_storage.yaml",
+                     "../tests/config_test.yaml"])
         Config.data["operation_storage"]["use"] = "mongodbtest"
         Config.data["network_type"] = "Test"
         Config.data["bitshares"]["connection"]["Test"]["nobroadcast"] = True
@@ -25,6 +26,6 @@ class TestBlockchainMonitor(ATestnetTest):
     @requires_blockchain
     def test_listen(self):
         monitor = BlockchainMonitor()
-        monitor.start_block = 14972965
-        monitor.stop_block = 14972975
+        monitor.start_block = 18351647
+        monitor.stop_block = 18351651
         monitor.listen()

@@ -12,6 +12,7 @@ from .. import Config
 
 
 INCIDENT_ID_REGEX = None
+CHAIN_IDENTIFIER_REGEX = None
 
 
 def validate_incident_id(incident_id):
@@ -37,6 +38,29 @@ def validate_incident_id(incident_id):
         raise InvalidOperationIdException()
 
 
+def validate_chain_identifier(incident_id):
+    """
+    Validates the given incident id against the configured regular expresssion
+    :param incident_id:
+    :type incident_id:
+    """
+    global CHAIN_IDENTIFIER_REGEX
+    if CHAIN_IDENTIFIER_REGEX is None:
+        CHAIN_IDENTIFIER_REGEX = re.compile(
+            Config.get("operation_storage",
+                       "chain_identifier",
+                       "format",
+                       default="[0-9a-fA-F]+:[0-9]{1}")
+        )
+    try:
+        if incident_id is None:
+            raise InvalidOperationIdException()
+        if CHAIN_IDENTIFIER_REGEX.match(incident_id) is None:
+            raise InvalidOperationIdException()
+    except KeyError:
+        raise InvalidOperationIdException()
+
+
 def decode_operation(operation):
     """ The given operation comes directly from the blockchain and is here reformatted.
         This is done to better suit the needs of our processing and also due to the fact
@@ -48,7 +72,9 @@ def decode_operation(operation):
     memo = operation["op"][1].get("memo", "unknown")
 
     new_operation = {
-        "block_num": operation.get("block_num"),
+        "block_num": operation.get("block_num", None),
+        "tx_in_block": operation.get("tx_in_block", None),
+        "op_in_tx": operation.get("op_in_tx", None),
         "memo": json.dumps(memo),
         "from": operation["op"][1]["from"],
         "to": operation["op"][1]["to"],
@@ -77,7 +103,10 @@ def decode_operation(operation):
     )
 
     if not memo["incident_id"]:
-        memo["incident_id"] = chain_identifier
+        if operation.get("incident_id", None) is not None:
+            memo["incident_id"] = operation["incident_id"]
+        else:
+            memo["incident_id"] = chain_identifier
 
     data = {
         "chain_identifier": chain_identifier,

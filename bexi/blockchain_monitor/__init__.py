@@ -1,4 +1,4 @@
-from ..operation_storage.exceptions import DuplicateOperationException
+from ..operation_storage.exceptions import DuplicateOperationException, OperationStorageBadRequestException
 from ..factory import get_operation_storage
 from ..connection import requires_blockchain
 from .. import Config
@@ -11,6 +11,10 @@ from bitshares.memo import Memo
 from bitsharesbase.operationids import getOperationNameForId
 from bitsharesbase.signedtransactions import Signed_Transaction
 import logging
+
+
+class BlockchainMonitorRetryException(Exception):
+    pass
 
 
 class BlockchainMonitor(object):
@@ -75,7 +79,7 @@ class BlockchainMonitor(object):
         # make sure the memo key is added to the instance
         memo_key = Config.get("bitshares", "exchange_account_memo_key")
         if not self.bitshares.wallet.created() or\
-                memo_key in self.bitshares.wallet.keys:
+                memo_key not in self.bitshares.wallet.keys:
             self.bitshares.wallet.setKeys(memo_key)
 
         # Get configuration
@@ -112,14 +116,6 @@ class BlockchainMonitor(object):
         self.start_block = kwargs.pop("start_block", None)
         self.stop_block = kwargs.pop("stop_block", None)
 
-        last_block = self.storage.get_last_head_block_num()
-
-        logging.getLogger(__name__).debug("Init with start=" + str(self.start_block) + " stop=" + str(self.stop_block) + " last=" + str(last_block))
-
-        if not self.start_block:
-            if last_block > 0:
-                self.start_block = last_block + 1
-
     def unlock_wallet(self, pwd):
         """ Unlock the pybitshares wallet with the provided password
         """
@@ -136,18 +132,64 @@ class BlockchainMonitor(object):
                 last block) and "irreversible" (the block that is confirmed by
                 2/3 of all block producers and is thus irreversible)
         """
-        for block in Blockchain(
-            mode=self.watch_mode,
-            max_block_wait_repetition=12,
-            bitshares_instance=self.bitshares
-        ).blocks(
-            start=self.start_block,
-            stop=self.stop_block
-        ):
-            logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
+        last_block = self.storage.get_last_head_block_num()
 
-            self.process_block(block)
-            self.storage.set_last_head_block_num(block["block_num"])
+        logging.getLogger(__name__).debug("Start listen with start=" + str(self.start_block) + " stop=" + str(self.stop_block) + " last=" + str(last_block))
+
+        # if set to true, block numbers may not be consecutively
+        self.allow_block_jump = False
+
+        if not self.start_block:
+            if last_block > 0:
+                self.start_block = last_block + 1
+        else:
+            if not self.start_block == self.storage.get_last_head_block_num() + 1:
+                # allow first block to jump
+                self.allow_block_jump = True
+                logging.getLogger(__name__).warning("Force listen with different block than last in storage (storage=" + str(last_block) + ", given=" + str(self.start_block) + ")")
+
+        retry = True
+        while (retry):
+            retry = False
+
+            block_listener = Blockchain(
+                mode=self.watch_mode,
+                max_block_wait_repetition=12,
+                bitshares_instance=self.bitshares
+            )
+
+            if not block_listener.mode == "last_irreversible_block_num":
+                block_listener.mode = "last_irreversible_block_num"
+
+            try:
+                for block in block_listener.blocks(
+                    start=self.start_block,
+                    stop=self.stop_block
+                ):
+                    logging.getLogger(__name__).debug("Processing block " + str(block["block_num"]))
+
+                    last_head_block = self.storage.get_last_head_block_num()
+
+                    if last_head_block == 0 or\
+                            block["block_num"] == last_head_block + 1 or\
+                            (self.allow_block_jump and last_head_block < block["block_num"]):
+                        self.allow_block_jump = False
+                        # no blocks missed
+                        self.process_block(block)
+                        self.storage.set_last_head_block_num(block["block_num"])
+                    elif block["block_num"] == last_head_block:
+                        # possible on connection error, skip block
+                        continue
+                    else:
+                        self.start_block = last_head_block + 1
+                        if self.stop_block is not None and self.start_block > self.stop_block:
+                            logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Stop block already reached, shutting down ...")
+                            return
+                        else:
+                            logging.getLogger(__name__).error("Block was missed, or trying to march backwards. Retry with next block " + str(last_head_block + 1))
+                            raise BlockchainMonitorRetryException()
+            except BlockchainMonitorRetryException:
+                retry = True
 
     def process_block(self, block):
         """ Process block and send transactions to
@@ -158,11 +200,12 @@ class BlockchainMonitor(object):
             This method takes all transactions (appends block-specific
             informations) and sends them to transaction processing
         """
-        for transaction in block.get("transactions", []):
+        for tx_in_block, transaction in enumerate(block.get("transactions", [])):
             # Add additional information
             transaction.update({
                 "block_num": block.get("block_num"),
                 "timestamp": block.get("timestamp"),
+                "tx_in_block": tx_in_block
             })
             self.process_transaction(transaction)
 
@@ -198,6 +241,7 @@ class BlockchainMonitor(object):
                     "block_num": transaction.get("block_num"),
                     "timestamp": transaction.get("timestamp"),
                     "expiration": transaction.get("expiration"),
+                    "tx_in_block": transaction.get("tx_in_block"),
                     "op_in_tx": op_in_tx,
                     "op": [
                         # Decode the operation type id as string
@@ -300,4 +344,7 @@ class BlockchainMonitor(object):
         try:
             self.storage.insert_or_update_operation(operation)
         except DuplicateOperationException:
-            pass
+            logging.getLogger(__name__).debug("Storage already contained operation, skipping ...")
+        except OperationStorageBadRequestException as e:
+            logging.getLogger(__name__).debug("Storage gave bad request, exception below. Skipping ...")
+            logging.getLogger(__name__).exception(e)

@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import click
-from bexi.wsgi.app import (
-    get_manage_service_app,
-    get_sign_service_app,
-    get_blockchain_monitor_service_app
-)
-from bexi import Config
+import time
+from bexi import Config, factory
 from bexi.connection import requires_blockchain
-from bexi.blockchain_monitor import BlockchainMonitor
+
 import logging
 import threading
+import json
+from pprint import pprint
+from bexi.operation_storage.exceptions import OperationNotFoundException
 
 config = Config.get("wsgi")
 
@@ -26,6 +25,8 @@ def wsgi(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_manage_service_app, get_sign_service_app
+
     app = get_manage_service_app()
     app = get_sign_service_app(app)
     app.logger.info("Starting " + config["name"] + " with manage and sign service ...")
@@ -39,6 +40,8 @@ def sign_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_sign_service_app
+
     app = get_sign_service_app()
     app.logger.info("Starting " + config["name"] + " sign service ...")
     app.run(host=host, port=port)
@@ -51,6 +54,8 @@ def manage_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_manage_service_app
+
     app = get_manage_service_app()
     app.logger.info("Starting " + config["name"] + " manage service ...")
     app.run(host=host, port=port)
@@ -62,6 +67,9 @@ def manage_service(host, port):
 def blockchain_monitor_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
+
+    from bexi.wsgi.app import get_blockchain_monitor_service_app
+
     app = get_blockchain_monitor_service_app()
 
     logging.getLogger(__name__).info("Starting BitShares blockchain monitor as coroutines ...")
@@ -74,13 +82,15 @@ def blockchain_monitor_service(host, port):
 
 
 @main.command()
-def only_blockchain_monitor():
+@click.option("--start")
+@click.option("--stop")
+def only_blockchain_monitor(start, stop):
     Config.load(["config_bitshares_connection.yaml",
                  "config_bitshares_memo_keys.yaml",
                  "config_bitshares.yaml",
                  "config_operation_storage.yaml"])
     logging.getLogger(__name__).info("Starting BitShares blockchain monitor ...")
-    start_block_monitor()
+    start_block_monitor(start, stop)
 
 
 @main.command()
@@ -90,15 +100,106 @@ def only_blockchain_monitor_service(host, port):
     host = host or config["host"]
     port = port or config["port"]
 
+    from bexi.wsgi.app import get_blockchain_monitor_service_app
+
     app = get_blockchain_monitor_service_app()
     app.logger.info("Starting " + config["name"] + " blockchain monitor service ...")
     app.run(host=host, port=port)
 
 
 @requires_blockchain
-def start_block_monitor():
-    monitor = BlockchainMonitor()
-    monitor.listen()
+def start_block_monitor(start=None, stop=None):
+    from bexi.blockchain_monitor import BlockchainMonitor
+    retry = True
+    while (retry):
+        retry = stop is None
+        try:
+            monitor = BlockchainMonitor()
+
+            if start is not None:
+                monitor.start_block = start
+            if stop is not None:
+                monitor.stop_block = stop
+
+            monitor.listen()
+        except Exception as e:
+            logging.getLogger(__name__).info("Blockchain monitor failed, exception below. Retrying after sleep")
+            logging.getLogger(__name__).exception(e)
+            time.sleep(1.5)
+
+    logging.getLogger(__name__).error("Monitoring done")
+
+
+@main.command()
+@click.option("--txid")
+@click.option("--customerid")
+@click.option("--contains")
+@click.option("--status")
+@click.option("--incidentid")
+def find(txid, customerid, contains, status, incidentid):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    storage = factory.get_operation_storage()
+
+    def get_all():
+        return (storage.get_operations_completed() +
+                storage.get_operations_in_progress() +
+                storage.get_operations_failed())
+    operations = []
+
+    if contains:
+        for op in get_all():
+            print(op)
+            if status is not None and not status == op["status"]:
+                continue
+
+            if contains in str(op):
+                operations.append(op)
+
+    if incidentid:
+            for op in list(storage._service.query_entities(
+                    storage._operation_tables["incident"])):
+                if incidentid in str(op):
+                    operations.append(op)
+
+    print("---------- finding transfers ---------------")
+    print("found: " + str(len(operations)))
+
+    for op in operations:
+        pprint(op)
+
+
+@main.command()
+@click.option("--take")
+def balance(take=100):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    pprint(factory.get_operation_storage().get_balances(take))
+
+
+@main.command()
+@click.option("--take")
+def balance_calc(take=100):
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    pprint(factory.get_operation_storage()._get_balances_recalculate(take))
+
+
+@main.command()
+def tracked():
+    Config.load(["config_bitshares_connection.yaml",
+                 "config_bitshares.yaml",
+                 "config_operation_storage.yaml"])
+
+    storage = factory.get_operation_storage()
+
+    pprint(list(storage._service.query_entities(storage._azure_config["address_table"] + "balance")))
 
 
 # @main.command()

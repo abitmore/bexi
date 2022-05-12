@@ -70,25 +70,19 @@ The active key is what you normally see as the private key, since it allows
 to move funds, whereas the memo key only allows reading the memo message of
 transfers. 
 
-Then initiate the blockchain monitor
-
-.. code-block:: bash
-
-	$ python3 cli.py blockchain_monitor
-  
-Start the blockchain monitor service (isalive wsgi response for blockchain monitor)
+Start the blockchain monitor service (isalive wsgi response with the actual monitor as coroutine, needs chain connection)
 
 .. code-block:: bash
 
 	$ python3 cli.py blockchain_monitor_service
 
-Start the sign service
+Start the sign service (create wallets, sign transactions, offline)
 
 .. code-block:: bash
 
 	$ python3 cli.py sign_service
   
-and the manage service
+and the manage service (buil and broadcast transactions, manage balances, history, ..., needs chain connection)
 
 .. code-block:: bash
 

@@ -81,6 +81,7 @@ class ATestOperationStorage(ATestnetTest):
     TEST_OP = {'block_num': 23645414,
                'transaction_id': 23,
                "op_in_tx": 2,
+               "tx_in_block": 0,
                'op': ['transfer',
                       {
                           "fee": {

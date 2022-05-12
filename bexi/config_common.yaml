@@ -2,9 +2,14 @@ dump_folder: dump
 
 logs:
     level: DEBUG
+    http:
+        host: logging-adapter-dev.lykkex.net
+        url: /api/logs
+        secure: True
+        blocking: True
 
 wsgi:
- name: bexi
- host: localhost
- port: 5000
- detailed_error: True
+    name: bexi
+    host: localhost
+    port: 5000
+    detailed_error: True

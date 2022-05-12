@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 import time
 
-from .exceptions import OperationStorageLostException,StatusInvalidException,\
-    InvalidOperationException, NoBlockNumException
+from .exceptions import OperationStorageLostException, StatusInvalidException,\
+    InvalidOperationException, NoBlockNumException, OperationStorageBadRequestException
 
 from ..operation_storage import operation_formatter
 from ..utils import date_to_string
@@ -211,6 +211,9 @@ def retry_auto_reconnect(func):
                 if wait_in_ms > 0:
                     time.sleep(wait_in_ms / 1000)
                 continue
+        # if it reacheas here, we have a persistent exception
+        if "bad request" in str(last_exception).lower() or "badrequest" in str(last_exception).lower():
+            raise OperationStorageBadRequestException(last_exception)
         raise OperationStorageLostException(last_exception)
     return f_retry
 
